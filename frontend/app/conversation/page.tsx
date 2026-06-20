@@ -16,7 +16,7 @@ function speakText(text: string) {
   if (!trimmedText) return;
   
   // Try to use our new Edge TTS neural voice endpoint for natural, human-like voice
-  const audio = new Audio(`process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'/api/tts?text=${encodeURIComponent(trimmedText)}`);
+  const audio = new Audio(`${process.env.NEXT_PUBLIC_API_URL}/api/tts?text=${encodeURIComponent(trimmedText)}`);
   audio.play().catch(err => {
     console.warn("Neural Edge TTS playback failed, falling back to local SpeechSynthesis:", err);
     if (!("speechSynthesis" in window)) return;
@@ -181,7 +181,7 @@ export default function ConversationScreen() {
   useEffect(() => {
     if (!smartSuggestions) return;
     const words = inputText.trim().split(/\s+/).filter(Boolean);
-    fetch("http://localhost:8000/api/autocomplete", {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/autocomplete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ words }),
@@ -236,7 +236,7 @@ export default function ConversationScreen() {
   // ── Backend check ─────────────────────────────────────────────────────────
   useEffect(() => {
     const checkBackend = () => {
-      fetch("http://localhost:8000/")
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/`)
         .then(r => r.ok ? setBackendStatus("ok") : setBackendStatus("error"))
         .catch(() => setBackendStatus("error"));
     };
@@ -249,7 +249,7 @@ export default function ConversationScreen() {
   // ── Translate helper ──────────────────────────────────────────────────────
   const translateText = useCallback(async (text: string) => {
     try {
-      const res = await fetch("http://localhost:8000/api/translate", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, target_language: selectedLangRef.current }),
@@ -269,7 +269,7 @@ export default function ConversationScreen() {
 
   const processSpeech = useCallback(async (text: string) => {
     try {
-      const res = await fetch("http://localhost:8000/api/to_asl_gloss", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/to_asl_gloss`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -312,7 +312,7 @@ export default function ConversationScreen() {
     // Run segmentation/grammar correction on send if gestured
     if (hasGesturedRef.current && typeof textOverride !== "string") {
       try {
-        const res = await fetch("http://localhost:8000/api/segment", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/segment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text })
@@ -458,7 +458,7 @@ export default function ConversationScreen() {
             const rawText = inputTextRef.current.trim();
             if (rawText) {
               try {
-                const res = await fetch("http://localhost:8000/api/segment", {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/segment`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({ text: rawText })

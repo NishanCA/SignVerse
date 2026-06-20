@@ -8,7 +8,7 @@
  * No browser-side TFLite needed → no WASM issues, no CDN failures.
  */
 
-const BACKEND = "http://localhost:8000";
+const BACKEND = process.env.NEXT_PUBLIC_API_URL;
 
 /**
  * Normalises hand landmarks exactly as Python's pre_process_landmark():

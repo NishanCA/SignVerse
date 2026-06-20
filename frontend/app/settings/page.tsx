@@ -150,7 +150,7 @@ export default function SettingsScreen() {
     
     if (targetCode !== "en") {
       try {
-        const res = await fetch(`\${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/translate`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/translate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: textToSpeak, target_language: targetCode }),

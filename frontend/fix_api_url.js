@@ -7,11 +7,11 @@ for (const file of files) {
     if (!fs.existsSync(fullPath)) continue;
     let content = fs.readFileSync(fullPath, 'utf8');
     
-    // Replace: "process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'/api/..."
-    content = content.replace(/\"process\.env\.NEXT_PUBLIC_API_URL \|\| 'http:\/\/localhost:8000'(\/[^\"]*)\"/g, "`\\${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}$1`");
+    // Replace: "process.env.NEXT_PUBLIC_API_URL/api/..."
+    content = content.replace(/\"process\.env\.NEXT_PUBLIC_API_URL(\/[^\"]*)\"/g, "`\\${process.env.NEXT_PUBLIC_API_URL}$1`");
     
-    // Replace standalone: "process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'"
-    content = content.replace(/\"process\.env\.NEXT_PUBLIC_API_URL \|\| 'http:\/\/localhost:8000'\"/g, "(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')");
+    // Replace standalone: "process.env.NEXT_PUBLIC_API_URL"
+    content = content.replace(/\"process\.env\.NEXT_PUBLIC_API_URL\"/g, "process.env.NEXT_PUBLIC_API_URL");
     
     fs.writeFileSync(fullPath, content);
 }
