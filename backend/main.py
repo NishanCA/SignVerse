@@ -83,23 +83,37 @@ else:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Load Whisper
+# Lazy Loading Helpers
 # ──────────────────────────────────────────────────────────────────────────────
-print("[INFO] Loading Whisper model...")
-whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
-print("[OK] Whisper model loaded.")
+_whisper_model = None
+def get_whisper_model():
+    global _whisper_model
+    if _whisper_model is None:
+        print("[INFO] Loading Whisper model...")
+        _whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
+        print("[OK] Whisper model loaded.")
+    return _whisper_model
 
-print("[INFO] Loading Autocomplete model (distilgpt2)...")
-try:
-    autocomplete_model = pipeline("text-generation", model="distilgpt2", device=-1)
-    print("[OK] Autocomplete model loaded.")
-except Exception as e:
-    print(f"[ERROR] Could not load autocomplete model: {e}")
-    autocomplete_model = None
+_autocomplete_model = None
+_autocomplete_loaded = False
+def get_autocomplete_model():
+    global _autocomplete_model, _autocomplete_loaded
+    if not _autocomplete_loaded:
+        print("[INFO] Loading Autocomplete model (distilgpt2)...")
+        try:
+            _autocomplete_model = pipeline("text-generation", model="distilgpt2", device=-1)
+            print("[OK] Autocomplete model loaded.")
+        except Exception as e:
+            print(f"[ERROR] Could not load autocomplete model: {e}")
+            _autocomplete_model = None
+        _autocomplete_loaded = True
+    return _autocomplete_model
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # FastAPI app
 # ──────────────────────────────────────────────────────────────────────────────
+print("[INFO] FastAPI server starting...")
 app = FastAPI(title="SignVerse API")
 
 app.add_middleware(
@@ -193,7 +207,8 @@ async def transcribe_audio(file: UploadFile = File(...)):
     try:
         with open(temp_path, "wb") as buf:
             shutil.copyfileobj(file.file, buf)
-        segments, info = whisper_model.transcribe(
+        model = get_whisper_model()
+        segments, info = model.transcribe(
             temp_path, vad_filter=True, beam_size=1, best_of=1, temperature=0.0
         )
         text = " ".join(seg.text for seg in segments).strip()
@@ -287,17 +302,18 @@ def autocomplete_sentence(req: AutocompleteRequest):
         return {"sentence": prefix, "suggestions": combined[:5]}
     
     # 3. GPT-2 Fallback
-    if autocomplete_model is None:
+    model = get_autocomplete_model()
+    if model is None:
         return {"sentence": prefix, "suggestions": []}
         
     try:
-        results = autocomplete_model(
+        results = model(
             prefix, 
             max_new_tokens=4, 
             num_return_sequences=2, 
             do_sample=True,
             temperature=0.7,
-            pad_token_id=autocomplete_model.tokenizer.eos_token_id
+            pad_token_id=model.tokenizer.eos_token_id
         )
         suggestions = []
         for r in results:
