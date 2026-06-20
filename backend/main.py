@@ -4,20 +4,29 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import uvicorn
 from deep_translator import GoogleTranslator
-from faster_whisper import WhisperModel
 import time
 import os
 import shutil
 import csv
 import numpy as np
 from spellchecker import SpellChecker
-import wordsegment
-wordsegment.load()  # loads unigram + bigram frequency tables once at startup
 import requests
 import io
 import edge_tts
-from transformers import pipeline
 from phrases import COMMON_PHRASES, get_starters
+
+# 1. app = FastAPI() must be created immediately after imports.
+app = FastAPI(title="SignVerse API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+print("[INFO] FastAPI server starting...")
 
 spell = SpellChecker()
 
@@ -35,7 +44,7 @@ NUMBER_LABEL_PATH   = os.path.join(MODEL_DIR, "number_classifier", "number_class
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Load labels
+# Lazy Loading Helpers
 # ──────────────────────────────────────────────────────────────────────────────
 def load_labels(path: str) -> list[str]:
     try:
@@ -45,54 +54,48 @@ def load_labels(path: str) -> list[str]:
         print(f"[WARN] Could not load labels from {path}: {e}")
         return []
 
-keypoint_labels = load_labels(KEYPOINT_LABEL_PATH)
-number_labels   = load_labels(NUMBER_LABEL_PATH)
-print(f"[OK] Keypoint labels ({len(keypoint_labels)}): {keypoint_labels}")
-print(f"[OK] Number labels   ({len(number_labels)}):   {number_labels}")
+keypoint_labels = []
+number_labels = []
+kp_interp, kp_in, kp_out = None, None, None
+nb_interp, nb_in, nb_out = None, None, None
+_tflite_loaded = False
 
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Load TFLite interpreters
-# ──────────────────────────────────────────────────────────────────────────────
-def load_tflite(path: str):
-    """Return (interpreter, input_index, output_index) or (None, None, None)."""
-    try:
+def get_tflite_models():
+    global _tflite_loaded, kp_interp, kp_in, kp_out, nb_interp, nb_in, nb_out
+    global keypoint_labels, number_labels
+    if not _tflite_loaded:
+        print("[INFO] Initializing TFLite models...")
         import tensorflow as tf
-        interp = tf.lite.Interpreter(model_path=os.path.abspath(path), num_threads=2)
-        interp.allocate_tensors()
-        in_idx  = interp.get_input_details()[0]["index"]
-        out_idx = interp.get_output_details()[0]["index"]
-        return interp, in_idx, out_idx
-    except Exception as e:
-        print(f"[ERROR] Could not load TFLite model {path}: {e}")
-        return None, None, None
-
-print("[INFO] Loading keypoint classifier...")
-kp_interp, kp_in, kp_out = load_tflite(KEYPOINT_MODEL_PATH)
-if kp_interp:
-    print("[OK] Keypoint classifier ready (RIGHT hand -> letters)")
-else:
-    print("[ERROR] Could not load keypoint model")
-
-print("[INFO] Loading number classifier...")
-nb_interp, nb_in, nb_out = load_tflite(NUMBER_MODEL_PATH)
-if nb_interp:
-    print("[OK] Number classifier ready (LEFT hand -> numbers)")
-else:
-    print("[ERROR] Could not load number model")
+        
+        keypoint_labels = load_labels(KEYPOINT_LABEL_PATH)
+        number_labels   = load_labels(NUMBER_LABEL_PATH)
+        
+        def load_tflite_internal(path: str):
+            try:
+                interp = tf.lite.Interpreter(model_path=os.path.abspath(path), num_threads=2)
+                interp.allocate_tensors()
+                in_idx  = interp.get_input_details()[0]["index"]
+                out_idx = interp.get_output_details()[0]["index"]
+                return interp, in_idx, out_idx
+            except Exception as e:
+                print(f"[ERROR] Could not load TFLite model {path}: {e}")
+                return None, None, None
+                
+        kp_interp, kp_in, kp_out = load_tflite_internal(KEYPOINT_MODEL_PATH)
+        nb_interp, nb_in, nb_out = load_tflite_internal(NUMBER_MODEL_PATH)
+        _tflite_loaded = True
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Lazy Loading Helpers
-# ──────────────────────────────────────────────────────────────────────────────
 _whisper_model = None
 def get_whisper_model():
     global _whisper_model
     if _whisper_model is None:
         print("[INFO] Loading Whisper model...")
+        from faster_whisper import WhisperModel
         _whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
         print("[OK] Whisper model loaded.")
     return _whisper_model
+
 
 _autocomplete_model = None
 _autocomplete_loaded = False
@@ -100,6 +103,7 @@ def get_autocomplete_model():
     global _autocomplete_model, _autocomplete_loaded
     if not _autocomplete_loaded:
         print("[INFO] Loading Autocomplete model (distilgpt2)...")
+        from transformers import pipeline
         try:
             _autocomplete_model = pipeline("text-generation", model="distilgpt2", device=-1)
             print("[OK] Autocomplete model loaded.")
@@ -110,19 +114,13 @@ def get_autocomplete_model():
     return _autocomplete_model
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# FastAPI app
-# ──────────────────────────────────────────────────────────────────────────────
-print("[INFO] FastAPI server starting...")
-app = FastAPI(title="SignVerse API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+_wordsegment_loaded = False
+def initialize_wordsegment():
+    global _wordsegment_loaded
+    if not _wordsegment_loaded:
+        import wordsegment
+        wordsegment.load()
+        _wordsegment_loaded = True
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -182,6 +180,8 @@ def classify_gesture(req: ClassifyRequest):
     """
     if len(req.landmarks) != 42:
         raise HTTPException(status_code=400, detail=f"Expected 42 values, got {len(req.landmarks)}")
+
+    get_tflite_models()
 
     arr = np.array([req.landmarks], dtype=np.float32)
 
@@ -341,6 +341,8 @@ def check_word(req: CheckWordRequest):
 @app.post("/api/segment")
 def segment_text(req: SegmentRequest):
     import re
+    initialize_wordsegment()
+    import wordsegment
 
     # 1. Strip spaces and lowercase (wordsegment is trained on lowercase)
     raw = req.text.replace(" ", "").lower()
