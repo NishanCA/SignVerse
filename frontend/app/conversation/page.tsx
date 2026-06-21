@@ -382,9 +382,9 @@ export default function ConversationScreen() {
     recognition.onend = () => {
       setIsSpeaking(false);
       // Auto-restart if still supposed to be listening (with delay to prevent socket conflicts)
-      if (micActiveRef.current && !isGesturingRef.current && !nonTransientError) {
+      if (micActiveRef.current && !nonTransientError) {
         setTimeout(() => {
-          if (micActiveRef.current && !isGesturingRef.current && !nonTransientError && recognitionRef.current === recognition) {
+          if (micActiveRef.current && !nonTransientError && recognitionRef.current === recognition) {
             try {
               recognition.start();
             } catch (err) {
@@ -431,50 +431,37 @@ export default function ConversationScreen() {
     };
   }, [stopSpeechRecognition]);
 
-  // ── Smart hand presence → mic auto-toggle ────────────────────────────────
+  // ── Smart hand presence ────────────────────────────────────────────────
   const handleHandPresenceChange = useCallback((detected: boolean) => {
-    setHandsVisible(detected);
+    setHandsVisible(prev => {
+      if (prev !== detected) return detected;
+      return prev;
+    });
 
     if (detected) {
       wasHandVisibleRef.current = true;
       isGesturingRef.current = true;
       handLastSeenRef.current = Date.now();
-      if (noHandTimerRef.current) {
-        clearTimeout(noHandTimerRef.current);
-        noHandTimerRef.current = null;
-      }
-      if (micActiveRef.current) stopSpeechRecognition();
     } else {
-      // Only schedule if the hand was previously visible (meaning it just disappeared)
       if (wasHandVisibleRef.current) {
         wasHandVisibleRef.current = false;
         isGesturingRef.current = false;
-        if (noHandTimerRef.current) clearTimeout(noHandTimerRef.current);
-        noHandTimerRef.current = setTimeout(async () => {
-          if (!isGesturingRef.current) {
-            const rawText = inputTextRef.current.trim();
-            if (rawText) {
-              try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/segment`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ text: rawText })
-                });
-                const data = await res.json();
-                handleSend(data.segmented || rawText);
-              } catch {
-                handleSend(rawText);
-              }
-            }
-            if (micActiveRef.current) {
-              startSpeechRecognition();
-            }
-          }
-          noHandTimerRef.current = null;
-        }, 1500);
+        
+        // Auto-send when hands are lowered
+        const rawText = inputTextRef.current.trim();
+        if (rawText) {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/segment`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: rawText })
+          })
+          .then(res => res.json())
+          .then(data => handleSend(data.segmented || rawText))
+          .catch(() => handleSend(rawText));
+        }
       }
     }
-  }, [stopSpeechRecognition, startSpeechRecognition, handleSend]);
+  }, [handleSend]);
 
   // ── Smart spacing handled by auto-send now ─────────────────────────────────
 
@@ -787,7 +774,7 @@ export default function ConversationScreen() {
     if (!next) {
       stopSpeechRecognition();
     } else {
-      if (!isGesturingRef.current) startSpeechRecognition();
+      startSpeechRecognition();
     }
   }, [micActive, stopSpeechRecognition, startSpeechRecognition]);
 
@@ -838,7 +825,8 @@ export default function ConversationScreen() {
         {/* Camera */}
         <div className="flex-1 relative bg-black overflow-hidden rounded-2xl border border-white/10">
           <video ref={videoRef} autoPlay playsInline muted
-            className={`absolute inset-0 w-full h-full object-cover scale-x-[-1] rounded-2xl transition-all duration-300 ${isSpeaking ? 'blur-md opacity-50' : ''}`} />
+            className={`absolute inset-0 w-full h-full object-cover scale-x-[-1] rounded-2xl`} />
+          <div className={`absolute inset-0 w-full h-full rounded-2xl transition-all duration-300 pointer-events-none ${isSpeaking ? 'backdrop-blur-md bg-black/30' : ''}`} />
           <canvas ref={canvasRef}
             className="absolute inset-0 w-full h-full scale-x-[-1] pointer-events-none rounded-2xl" />
 
