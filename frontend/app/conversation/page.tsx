@@ -9,6 +9,7 @@ import { preProcessLandmark, predictSign } from "../../lib/gesture-recognition";
 import Avatar3D from "../../components/Avatar3D";
 import { userService } from "../../lib/userService";
 import { useLanguage } from "../../context/LanguageContext";
+import { useBackendStatus } from "../../context/BackendStatusContext";
 
 // ─── TTS ─────────────────────────────────────────────────────────────────────
 function speakText(text: string) {
@@ -85,7 +86,7 @@ export default function ConversationScreen() {
   const [handsVisible, setHandsVisible]     = useState(false);
   const [webcamActive, setWebcamActive]     = useState(true);
   const [micActive, setMicActive]           = useState(false);
-  const [backendStatus, setBackendStatus]   = useState<"checking"|"ok"|"error">("checking");
+  const { status: backendStatus }           = useBackendStatus();
   const [micStatus, setMicStatus]           = useState<"idle"|"listening"|"processing">("idle");
   const [hasGestured, setHasGestured]       = useState(false);
   const [isSpeaking, setIsSpeaking]         = useState(false);
@@ -232,19 +233,6 @@ export default function ConversationScreen() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // ── Backend check ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    const checkBackend = () => {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/`)
-        .then(r => r.ok ? setBackendStatus("ok") : setBackendStatus("error"))
-        .catch(() => setBackendStatus("error"));
-    };
-    
-    checkBackend();
-    const interval = setInterval(checkBackend, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   // ── Translate helper ──────────────────────────────────────────────────────
   const translateText = useCallback(async (text: string) => {
@@ -789,13 +777,13 @@ export default function ConversationScreen() {
   }, [micActive, stopSpeechRecognition, startSpeechRecognition]);
 
   // ── Status badges ─────────────────────────────────────────────────────────
-  const bbg = backendStatus === "ok"
+  const bbg = backendStatus === "online"
     ? "bg-green-500/20 border-green-500/50 text-green-100"
-    : backendStatus === "error"
+    : backendStatus === "offline"
     ? "bg-red-500/20 border-red-500/50 text-red-200"
     : "bg-yellow-500/20 border-yellow-500/50 text-yellow-100";
-  const bdot = backendStatus === "ok" ? "bg-green-400" : backendStatus === "error" ? "bg-red-400 animate-pulse" : "bg-yellow-400 animate-pulse";
-  const blabel = backendStatus === "ok" ? "Backend Ready" : backendStatus === "error" ? "Backend Offline" : "Connecting…";
+  const bdot = backendStatus === "online" ? "bg-green-400" : backendStatus === "offline" ? "bg-red-400 animate-pulse" : "bg-yellow-400 animate-pulse";
+  const blabel = backendStatus === "online" ? "Backend Online" : backendStatus === "offline" ? "Backend Offline" : "Waking up server (20-60s)";
 
   const micStatusLabel = micStatus === "listening" ? (t("conv.listening")) : micStatus === "processing" ? (t("conv.processing")) : "";
 

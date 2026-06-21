@@ -168,6 +168,11 @@ def run_tflite(interp, in_idx, out_idx, landmark_arr: np.ndarray) -> tuple[int, 
 def read_root():
     return {"message": "SignVerse API running"}
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 
 @app.post("/api/classify")
 def classify_gesture(req: ClassifyRequest):
