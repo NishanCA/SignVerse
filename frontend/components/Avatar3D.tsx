@@ -40,6 +40,8 @@ function AvatarModel({ signingText, trigger, debug, onSequenceFinished, onFinger
 
   // Apply customizations
   useEffect(() => {
+    const cleanups: (() => void)[] = [];
+
     // 1. Set Skin Tone from prop & Clean up existing accessories
     const skinTone = new THREE.Color(skinColor);
     // Derive joint tone as slightly darker version of skin color
@@ -53,15 +55,29 @@ function AvatarModel({ signingText, trigger, debug, onSequenceFinished, onFinger
       if (child instanceof THREE.Mesh) {
         if (child.name.includes("Beta_HighLimbs") || (child.material && child.material.name.includes("Beta_HighLimbs"))) {
           if (!child.userData.originalColorSet) {
+             child.userData.originalMaterial = child.material;
              child.material = child.material.clone();
              child.userData.originalColorSet = true;
+             
+             cleanups.push(() => {
+                 child.material.dispose();
+                 child.material = child.userData.originalMaterial;
+                 child.userData.originalColorSet = false;
+             });
           }
           child.material.color.copy(skinTone);
           child.material.roughness = 0.6;
         } else if (child.name.includes("Joints") || (child.material && child.material.name.includes("Joints"))) {
           if (!child.userData.originalColorSet) {
+             child.userData.originalMaterial = child.material;
              child.material = child.material.clone();
              child.userData.originalColorSet = true;
+
+             cleanups.push(() => {
+                 child.material.dispose();
+                 child.material = child.userData.originalMaterial;
+                 child.userData.originalColorSet = false;
+             });
           }
           child.material.color.copy(jointTone);
         }
@@ -95,6 +111,9 @@ function AvatarModel({ signingText, trigger, debug, onSequenceFinished, onFinger
         obj.scale.set(100, 100, 100);
         obj.position.multiplyScalar(100);
         bone.add(obj);
+        cleanups.push(() => {
+           bone.remove(obj);
+        });
       });
     };
 
@@ -109,9 +128,10 @@ function AvatarModel({ signingText, trigger, debug, onSequenceFinished, onFinger
       const matMouth = new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.6 });
 
       // Eyes
-      const leftEye = createMesh(new THREE.SphereGeometry(0.012, 16, 16), matEye, 'l_eye');
+      const eyeGeom = new THREE.SphereGeometry(0.012, 16, 16);
+      const leftEye = createMesh(eyeGeom, matEye, 'l_eye');
       leftEye.position.set(0.035, 0.04, 0.088);
-      const rightEye = createMesh(new THREE.SphereGeometry(0.012, 16, 16), matEye, 'r_eye');
+      const rightEye = createMesh(eyeGeom, matEye, 'r_eye');
       rightEye.position.set(-0.035, 0.04, 0.088);
 
       // Smile (curved tube)
@@ -126,7 +146,18 @@ function AvatarModel({ signingText, trigger, debug, onSequenceFinished, onFinger
 
       faceGroup.add(leftEye, rightEye, mouth);
       attachToBone(head, faceGroup);
+
+      cleanups.push(() => {
+          matEye.dispose();
+          matMouth.dispose();
+          eyeGeom.dispose();
+          smileGeom.dispose();
+      });
     }
+
+    return () => {
+        cleanups.forEach(fn => fn());
+    };
   }, [scene, boneMap, skinColor]);
 
   const localQueueRef = useRef<{ sign: string; word?: string }[]>([]);

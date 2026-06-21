@@ -182,16 +182,21 @@ export default function ConversationScreen() {
   useEffect(() => {
     if (!smartSuggestions) return;
     const words = inputText.trim().split(/\s+/).filter(Boolean);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/autocomplete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words }),
-    })
-    .then(r => r.json())
-    .then(data => {
-      setSuggestions(data.suggestions || []);
-    })
-    .catch(() => setSuggestions([]));
+    
+    const timeoutId = setTimeout(() => {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/autocomplete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ words }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        setSuggestions(data.suggestions || []);
+      })
+      .catch(() => setSuggestions([]));
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
   }, [inputText, smartSuggestions]);
 
   const hasGesturedRef = useRef(hasGestured);
@@ -358,9 +363,13 @@ export default function ConversationScreen() {
       }
     };
 
+    let nonTransientError = false;
+
     recognition.onerror = (err: any) => {
       console.warn("Speech recognition error:", err);
-      if (err.error === "not-allowed") {
+      // "network", "not-allowed", "aborted", "service-not-allowed" are generally non-transient
+      if (err.error === "not-allowed" || err.error === "network" || err.error === "aborted" || err.error === "service-not-allowed") {
+        nonTransientError = true;
         setMicActive(false);
         micActiveRef.current = false;
         if (recognitionRef.current === recognition) {
@@ -373,9 +382,9 @@ export default function ConversationScreen() {
     recognition.onend = () => {
       setIsSpeaking(false);
       // Auto-restart if still supposed to be listening (with delay to prevent socket conflicts)
-      if (micActiveRef.current && !isGesturingRef.current) {
+      if (micActiveRef.current && !isGesturingRef.current && !nonTransientError) {
         setTimeout(() => {
-          if (micActiveRef.current && !isGesturingRef.current && recognitionRef.current === recognition) {
+          if (micActiveRef.current && !isGesturingRef.current && !nonTransientError && recognitionRef.current === recognition) {
             try {
               recognition.start();
             } catch (err) {
@@ -603,6 +612,7 @@ export default function ConversationScreen() {
   useEffect(() => {
     if (!sessionActive || !webcamActive) return;
     let camera: any = null;
+    let handsInstance: any = null;
     let cancelled   = false;
 
     async function init() {
@@ -615,6 +625,7 @@ export default function ConversationScreen() {
         const hands = new Hands({
           locateFile: (f: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`,
         });
+        handsInstance = hands;
         hands.setOptions({
           maxNumHands: 2,
           modelComplexity: 1,
@@ -739,6 +750,7 @@ export default function ConversationScreen() {
           width: 640,
           height: 480,
         });
+        if (cancelled) return;
         await camera.start();
         console.log("MediaPipe Hands ready");
       } catch (err) {
@@ -750,6 +762,9 @@ export default function ConversationScreen() {
     return () => {
       cancelled = true;
       camera?.stop();
+      if (handsInstance) {
+        handsInstance.close();
+      }
       if (noHandTimerRef.current) clearTimeout(noHandTimerRef.current);
     };
   }, [sessionActive, webcamActive]);
