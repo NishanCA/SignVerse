@@ -11,6 +11,7 @@ import { auth, db } from "../../lib/firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useLanguage } from "../../context/LanguageContext";
 import { LanguageKey } from "../../translations";
+import { BACKEND_URL } from "../../lib/config";
 
 const SKIN_COLORS = [
   { id: "light", hex: "#ffe0bd", label: "Light" },
@@ -150,7 +151,7 @@ export default function SettingsScreen() {
     
     if (targetCode !== "en") {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/translate`, {
+        const res = await fetch(`${BACKEND_URL}/api/translate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: textToSpeak, target_language: targetCode }),

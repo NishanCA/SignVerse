@@ -18,11 +18,21 @@ from phrases import COMMON_PHRASES, get_starters
 # 1. app = FastAPI() must be created immediately after imports.
 app = FastAPI(title="SignVerse API")
 
+# Allowed frontend origins.
+# Add any additional preview/branch URLs from Vercel here.
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://signverse-rust.vercel.app",
+    # Vercel preview deployments use the pattern below — wildcard not supported
+    # by FastAPI CORSMiddleware, so add specific preview URLs as needed.
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -281,56 +291,60 @@ def text_to_asl_gloss(req: AslGlossRequest):
 
 @app.post("/api/autocomplete")
 def autocomplete_sentence(req: AutocompleteRequest):
-    prefix = " ".join(req.words).strip()
-    
-    # 1. Empty Prefix -> Suggest starters
-    if not prefix:
-        return {"sentence": "", "suggestions": get_starters(5)}
-        
-    prefix_lower = prefix.lower()
-    
-    # 2. Dictionary Search
-    # Find phrases that contain the prefix (substring match)
-    matches = [p for p in COMMON_PHRASES if prefix_lower in p.lower()]
-    
-    if matches:
-        # Prioritize exact prefix matches over substring matches
-        prefix_matches = [p for p in matches if p.lower().startswith(prefix_lower)]
-        other_matches = [p for p in matches if not p.lower().startswith(prefix_lower)]
-        
-        # Sort by length (shortest match first)
-        prefix_matches.sort(key=len)
-        other_matches.sort(key=len)
-        
-        combined = prefix_matches + other_matches
-        # Return the full sentence as the suggestion
-        return {"sentence": prefix, "suggestions": combined[:5]}
-    
-    # 3. GPT-2 Fallback
-    model = get_autocomplete_model()
-    if model is None:
-        return {"sentence": prefix, "suggestions": []}
-        
     try:
-        results = model(
-            prefix, 
-            max_new_tokens=4, 
-            num_return_sequences=2, 
-            do_sample=True,
-            temperature=0.7,
-            pad_token_id=model.tokenizer.eos_token_id
-        )
-        suggestions = []
-        for r in results:
-            text = r["generated_text"]
-            if text.startswith(prefix) and text != prefix:
-                clean_suggestion = text.strip()
-                if clean_suggestion not in suggestions:
-                    suggestions.append(clean_suggestion)
-        return {"sentence": prefix, "suggestions": suggestions[:2]}
+        prefix = " ".join(req.words).strip()
+
+        # 1. Empty prefix → suggest starters
+        if not prefix:
+            return {"sentence": "", "suggestions": get_starters(5)}
+
+        prefix_lower = prefix.lower()
+
+        # 2. Dictionary search — phrases that contain the prefix (substring match)
+        matches = [p for p in COMMON_PHRASES if prefix_lower in p.lower()]
+
+        if matches:
+            # Prioritize exact prefix matches over substring matches
+            prefix_matches = [p for p in matches if p.lower().startswith(prefix_lower)]
+            other_matches  = [p for p in matches if not p.lower().startswith(prefix_lower)]
+
+            # Sort by length (shortest match first)
+            prefix_matches.sort(key=len)
+            other_matches.sort(key=len)
+
+            combined = prefix_matches + other_matches
+            return {"sentence": prefix, "suggestions": combined[:5]}
+
+        # 3. GPT-2 fallback
+        model = get_autocomplete_model()
+        if model is None:
+            return {"sentence": prefix, "suggestions": []}
+
+        try:
+            results = model(
+                prefix,
+                max_new_tokens=4,
+                num_return_sequences=2,
+                do_sample=True,
+                temperature=0.7,
+                pad_token_id=model.tokenizer.eos_token_id
+            )
+            suggestions = []
+            for r in results:
+                text = r["generated_text"]
+                if text.startswith(prefix) and text != prefix:
+                    clean_suggestion = text.strip()
+                    if clean_suggestion not in suggestions:
+                        suggestions.append(clean_suggestion)
+            return {"sentence": prefix, "suggestions": suggestions[:2]}
+        except Exception as e:
+            print(f"[Autocomplete] GPT-2 inference failed: {e}")
+            return {"sentence": prefix, "suggestions": []}
+
     except Exception as e:
-        print(f"[WARN] Autocomplete failed: {e}")
-        return {"sentence": prefix, "suggestions": []}
+        # Top-level catch — autocomplete failures must never crash the backend
+        print(f"[Autocomplete] Unhandled error: {e}")
+        return {"suggestions": []}
 
 
 @app.post("/api/check_word")

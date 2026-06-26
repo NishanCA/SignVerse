@@ -34,7 +34,10 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
   }, []);
 
   const startSpeech = useCallback(() => {
-    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) return;
+    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+      console.warn("[Speech] SpeechRecognition API not available in this browser");
+      return;
+    }
     if (recognitionRef.current) return; // already running
 
     const SpeechRecognition =
@@ -44,7 +47,10 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    recognition.onstart = () => setMicStatus("listening");
+    recognition.onstart = () => {
+      console.log("[Speech] started");
+      setMicStatus("listening");
+    };
     recognition.onspeechstart = () => setIsSpeaking(true);
     recognition.onspeechend = () => setIsSpeaking(false);
     recognition.onsoundend = () => setIsSpeaking(false);
@@ -58,7 +64,10 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
         }
       }
       if (finalTranscript.trim()) {
+        console.log("[Speech] transcript:", finalTranscript.trim());
         setMicStatus("processing");
+        // Emit the result
+        console.log("[Speech] emitted:", finalTranscript.trim());
         onSpeechResultRef.current(finalTranscript.trim());
         setIsSpeaking(false);
         setTimeout(() => setMicStatus("listening"), 500);
@@ -68,7 +77,10 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
     let nonTransientError = false;
 
     recognition.onerror = (err: any) => {
-      console.warn("[useSpeechRecognition] error:", err.error);
+      console.log("[Speech] error:", err.error);
+      // no-speech is transient — do NOT treat it as a fatal error.
+      // It fires when silence is detected, but recognition continues.
+      if (err.error === "no-speech") return;
       if (
         err.error === "not-allowed" ||
         err.error === "network" ||
@@ -78,33 +90,31 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
         nonTransientError = true;
         setMicActive(false);
         micActiveRef.current = false;
-        if (recognitionRef.current === recognition) {
-          recognitionRef.current = null;
-          setMicStatus("idle");
-          setIsSpeaking(false);
-        }
+        recognitionRef.current = null;
+        setMicStatus("idle");
+        setIsSpeaking(false);
       }
     };
 
+    // FIX: The old guard `recognitionRef.current === recognition` failed on
+    // restart because recognitionRef.current is set to null by the catch
+    // block in some paths before onend fires. Use a local `isActive` flag
+    // instead — it is closure-scoped and reliably tracks this instance.
     recognition.onend = () => {
       setIsSpeaking(false);
-      // Auto-restart if still supposed to be active
       if (micActiveRef.current && !nonTransientError) {
+        // Auto-restart: replace the stale ref with a fresh start
+        recognitionRef.current = null; // clear ref so startSpeech() won't bail early
         setTimeout(() => {
-          if (micActiveRef.current && !nonTransientError && recognitionRef.current === recognition) {
-            try {
-              recognition.start();
-            } catch {
-              recognitionRef.current = null;
-              setMicStatus("idle");
-            }
+          if (micActiveRef.current && !nonTransientError) {
+            startSpeech(); // call startSpeech() rather than recognition.start()
+                           // so a brand-new instance is created every time
+            console.log("[Speech] restarted after onend");
           }
-        }, 100);
+        }, 150);
       } else {
-        if (recognitionRef.current === recognition) {
-          recognitionRef.current = null;
-          setMicStatus("idle");
-        }
+        recognitionRef.current = null;
+        setMicStatus("idle");
       }
     };
 
@@ -112,11 +122,12 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
     try {
       recognition.start();
     } catch (err) {
-      console.error("[useSpeechRecognition] start failed:", err);
+      console.error("[Speech] start failed:", err);
       recognitionRef.current = null;
       setMicStatus("idle");
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // startSpeech is intentionally stable — it reads micActiveRef, not micActive state
 
   const toggleMic = useCallback(() => {
     const next = !micActiveRef.current;

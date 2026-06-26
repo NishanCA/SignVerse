@@ -8,7 +8,20 @@
  * No browser-side TFLite needed → no WASM issues, no CDN failures.
  */
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL;
+import { BACKEND_URL } from "./config";
+
+// ── Throttle /api/classify to max 2.5 requests/sec (400 ms gate) ──────────
+// This only limits backend HTTP calls. It does NOT block gesture detection
+// or UI updates — those happen every frame regardless.
+let lastClassificationTime = 0;
+const CLASSIFY_THROTTLE_MS = 400;
+
+// ── NOTE: Duplicate gesture dedup (1000 ms) WAS HERE but was removed. ─────
+// The gesture state machine in useConversationEngine depends on receiving
+// onGestureDetected on every classify result so hold-timers can accumulate.
+// Deduplication at this layer prevents the state machine from ever confirming
+// a held gesture, breaking letter printing entirely. Dedup is intentionally
+// NOT applied here.
 
 /**
  * Normalises hand landmarks exactly as Python's pre_process_landmark():
@@ -43,20 +56,48 @@ export function preProcessLandmark(
  * Send 42 landmark floats + hand side to the backend.
  * - hand_side "Right" → keypoint classifier → letters / Delete
  * - hand_side "Left"  → number classifier  → 0-9
- * Returns null if confidence < 0.5 or request fails.
+ * Returns null if confidence < 0.5, throttled, or request fails.
+ *
+ * Throttled to 400 ms between HTTP calls — backend protection only.
+ * Gesture outputs are NOT deduplicated here; the state machine in
+ * useConversationEngine handles repeated gestures for hold-to-print.
  */
-export async function predictSign(flatLandmarks: number[], hand_side: string = "Right"): Promise<string | null> {
+export async function predictSign(
+  flatLandmarks: number[],
+  hand_side: string = "Right"
+): Promise<string | null> {
+  const now = Date.now();
+
+  // Throttle: limit backend HTTP calls, but emit null so classifyPendingRef
+  // is released immediately and next frames can still be processed.
+  if (now - lastClassificationTime < CLASSIFY_THROTTLE_MS) {
+    console.log("[Gesture] skipped: throttle (backend rate limit, not blocking state machine)");
+    return null;
+  }
+  lastClassificationTime = now;
+
   try {
-    const res = await fetch(`${BACKEND}/api/classify`, {
+    const res = await fetch(`${BACKEND_URL}/api/classify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ landmarks: flatLandmarks, hand_side }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log("[Gesture] skipped: backend returned", res.status);
+      return null;
+    }
     const data = await res.json();
-    if (data.confidence < 0.5) return null;
-    return data.label as string;
-  } catch {
+
+    if (data.confidence < 0.5) {
+      console.log("[Gesture] skipped: low confidence", data.confidence?.toFixed(2));
+      return null;
+    }
+
+    const label = data.label as string;
+    console.log("[Gesture] predicted:", label, "confidence:", data.confidence?.toFixed(2));
+    return label;
+  } catch (err) {
+    console.log("[Gesture] skipped: fetch error", err);
     return null;
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from "react";
+import { BACKEND_URL } from "../lib/config";
 
 export type BackendStatus = "idle" | "waking" | "online" | "offline";
 
@@ -34,7 +35,7 @@ export const BackendStatusProvider = ({ children }: { children: React.ReactNode 
 
   const pingBackend = useCallback(async (): Promise<boolean> => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/health`);
+      const res = await fetch(`${BACKEND_URL}/health`);
       if (res.ok) {
         return true;
       }

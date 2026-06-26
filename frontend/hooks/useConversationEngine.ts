@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
+import { BACKEND_URL } from "../lib/config";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 export type Message = {
@@ -17,7 +18,7 @@ function speakText(text: string) {
   if (!trimmedText) return;
 
   const audio = new Audio(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/tts?text=${encodeURIComponent(trimmedText)}`
+    `${BACKEND_URL}/api/tts?text=${encodeURIComponent(trimmedText)}`
   );
   audio.play().catch(() => {
     if (!("speechSynthesis" in window)) return;
@@ -76,22 +77,16 @@ export function useConversationEngine({
   });
 
   // ── Translate helper ────────────────────────────────────────────────────────
-  const translateText = useCallback(async (text: string) => {
+  const translateText = useCallback(async (text: string, msgId: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/translate`, {
+      const res = await fetch(`${BACKEND_URL}/api/translate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, target_language: selectedLangRef.current }),
       });
       const data = await res.json();
       if (data.translated_text && selectedLangRef.current !== "en") {
-        setMessages((p) => {
-          const newMsgs = [...p];
-          if (newMsgs.length > 0) {
-            newMsgs[newMsgs.length - 1].translation = data.translated_text;
-          }
-          return newMsgs;
-        });
+        setMessages((p) => p.map((m) => (m.id === msgId ? { ...m, translation: data.translated_text } : m)));
       }
     } catch {
       // silent
@@ -101,8 +96,20 @@ export function useConversationEngine({
   // ── Process speech → ASL gloss → avatar ────────────────────────────────────
   const processSpeech = useCallback(
     async (text: string) => {
+      console.log("[Pipeline] speech received");
+      const msgId = Date.now().toString();
+
+      // UI Immediately
+      setMessages((p) => [
+        ...p,
+        { id: msgId, sender: "assistant", text },
+      ]);
+      console.log("[Pipeline] UI updated");
+
+      translateText(text, msgId);
+
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/to_asl_gloss`, {
+        const res = await fetch(`${BACKEND_URL}/api/to_asl_gloss`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text }),
@@ -112,27 +119,17 @@ export function useConversationEngine({
 
         if (aslGloss.length > 30) {
           speakText("Speech too long");
-          setMessages((p) => [...p, { id: Date.now().toString(), sender: "assistant", text }]);
-          translateText(text);
           return;
         }
 
-        setMessages((p) => [
-          ...p,
-          { id: Date.now().toString(), sender: "assistant", text, aslGloss },
-        ]);
-        translateText(text);
+        setMessages((p) => p.map((m) => (m.id === msgId ? { ...m, aslGloss } : m)));
         setAvatarText(aslGloss);
         setAvatarTrigger(Date.now());
       } catch {
         if (text.length > 30) {
           speakText("Speech too long");
-          setMessages((p) => [...p, { id: Date.now().toString(), sender: "assistant", text }]);
-          translateText(text);
           return;
         }
-        setMessages((p) => [...p, { id: Date.now().toString(), sender: "assistant", text }]);
-        translateText(text);
         setAvatarText(text);
         setAvatarTrigger(Date.now());
       }
@@ -147,27 +144,36 @@ export function useConversationEngine({
       let text = textStr.trim();
       if (!text) return;
 
+      const msgId = Date.now().toString();
+      const msg: Message = { id: msgId, sender: "user", text };
+
+      // UI Immediately
+      setMessages((p) => [...p, msg]);
+      setInputTextWithRef("");
+      console.log("[Pipeline] UI updated");
+
+      speakText(text);
+      translateText(text, msgId);
+
+      const wasGestured = hasGesturedRef.current && typeof textOverride !== "string";
+      setHasGestured(false);
+
       // Segmentation/grammar correction only when gestured
-      if (hasGesturedRef.current && typeof textOverride !== "string") {
+      if (wasGestured) {
         try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/segment`, {
+          const res = await fetch(`${BACKEND_URL}/api/segment`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text }),
           });
           const data = await res.json();
-          if (data.segmented) text = data.segmented;
+          if (data.segmented) {
+            setMessages((p) => p.map((m) => (m.id === msgId ? { ...m, text: data.segmented } : m)));
+          }
         } catch (err) {
           console.warn("[useConversationEngine] Segmentation failed:", err);
         }
       }
-
-      const msg: Message = { id: Date.now().toString(), sender: "user", text };
-      setMessages((p) => [...p, msg]);
-      setInputTextWithRef("");
-      speakText(text);
-      translateText(text);
-      setHasGestured(false);
     },
     [translateText, setInputTextWithRef]
   );
@@ -177,7 +183,7 @@ export function useConversationEngine({
     const rawText = inputTextRef.current.trim();
     if (!rawText) return;
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/segment`, {
+    fetch(`${BACKEND_URL}/api/segment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: rawText }),
@@ -192,6 +198,7 @@ export function useConversationEngine({
     (sign: string | null, handSide: string) => {
       // Suggestion selection via two-hand mode
       if (handSide === "suggestion" && sign) {
+        console.log("[Pipeline] gesture received");
         setInputTextWithRef(sign);
         return;
       }
@@ -217,6 +224,7 @@ export function useConversationEngine({
       } else if (sign && sign !== "Delete") {
         if (!st.printed) {
           if (now - st.startTime >= HOLD_TO_PRINT) {
+            console.log("[Pipeline] gesture received");
             setInputTextWithRef((prev) => prev + sign);
             st.printed = true;
             st.repeatStart = now;
@@ -224,17 +232,20 @@ export function useConversationEngine({
         } else {
           if (st.repeatStart === 0) st.repeatStart = now;
           else if (now - st.repeatStart >= HOLD_TO_REPEAT) {
+            console.log("[Pipeline] gesture received");
             setInputTextWithRef((prev) => prev + sign);
             st.repeatStart = now;
           }
         }
       } else if (sign === "Delete") {
         if (now - st.startTime >= HOLD_TO_CLEAR_ALL && !st.clearedAll) {
+          console.log("[Pipeline] gesture received");
           setInputTextWithRef("");
           st.clearedAll = true;
           st.repeatStart = now;
         } else if (!st.printed && !st.clearedAll) {
           if (now - st.startTime >= HOLD_TO_PRINT_DELETE) {
+            console.log("[Pipeline] gesture received");
             setInputTextWithRef((prev) => prev.slice(0, -1));
             st.printed = true;
             st.repeatStart = now;
@@ -242,6 +253,7 @@ export function useConversationEngine({
         } else if (!st.clearedAll) {
           if (st.repeatStart === 0) st.repeatStart = now;
           else if (now - st.repeatStart >= HOLD_TO_REPEAT_DELETE) {
+            console.log("[Pipeline] gesture received");
             setInputTextWithRef((prev) => prev.slice(0, -1));
             st.repeatStart = now;
           }
