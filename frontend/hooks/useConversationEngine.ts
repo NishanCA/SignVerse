@@ -206,7 +206,7 @@ export function useConversationEngine({
       const st = gestureStateRef.current;
       const now = Date.now() / 1000;
       const HOLD_TO_PRINT = gestureSensitivityRef.current;
-      const HOLD_TO_REPEAT = gestureSensitivityRef.current;
+      const HOLD_TO_REPEAT = 2.5; // Drastically increased to prevent accidental double-letters
       const HOLD_TO_PRINT_DELETE = gestureSensitivityRef.current;
       const HOLD_TO_REPEAT_DELETE = gestureSensitivityRef.current;
       const HOLD_TO_CLEAR_ALL = 3.0;
