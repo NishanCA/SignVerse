@@ -13,19 +13,31 @@ export type Message = {
 };
 
 // ─── TTS ───────────────────────────────────────────────────────────────────────
-function speakText(text: string) {
+function speakText(text: string, onStart?: () => void, onEnd?: () => void) {
   const trimmedText = text.trim();
   if (!trimmedText) return;
+
+  onStart?.();
 
   const audio = new Audio(
     `${BACKEND_URL}/api/tts?text=${encodeURIComponent(trimmedText)}`
   );
+  
+  audio.onended = () => {
+    onEnd?.();
+  };
+  
   audio.play().catch(() => {
-    if (!("speechSynthesis" in window)) return;
+    if (!("speechSynthesis" in window)) {
+      onEnd?.();
+      return;
+    }
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(trimmedText);
     utt.lang = "en-US";
     utt.rate = 0.95;
+    utt.onend = () => onEnd?.();
+    utt.onerror = () => onEnd?.();
     window.speechSynthesis.speak(utt);
   });
 }
@@ -33,11 +45,15 @@ function speakText(text: string) {
 interface UseConversationEngineOptions {
   selectedLang: string;
   gestureSensitivity?: number;
+  onTtsStart?: () => void;
+  onTtsEnd?: () => void;
 }
 
 export function useConversationEngine({
   selectedLang,
   gestureSensitivity = 0.75,
+  onTtsStart,
+  onTtsEnd
 }: UseConversationEngineOptions) {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [inputText, setInputText] = useState("");
@@ -118,7 +134,7 @@ export function useConversationEngine({
         const aslGloss = data.asl_gloss || text;
 
         if (aslGloss.length > 30) {
-          speakText("Speech too long");
+          speakText("Speech too long", onTtsStart, onTtsEnd);
           return;
         }
 
@@ -127,7 +143,7 @@ export function useConversationEngine({
         setAvatarTrigger(Date.now());
       } catch {
         if (text.length > 30) {
-          speakText("Speech too long");
+          speakText("Speech too long", onTtsStart, onTtsEnd);
           return;
         }
         setAvatarText(text);
@@ -152,7 +168,7 @@ export function useConversationEngine({
       setInputTextWithRef("");
       console.log("[Pipeline] UI updated");
 
-      speakText(text);
+      speakText(text, onTtsStart, onTtsEnd);
       translateText(text, msgId);
 
       const wasGestured = hasGesturedRef.current && typeof textOverride !== "string";
@@ -206,7 +222,7 @@ export function useConversationEngine({
       const st = gestureStateRef.current;
       const now = Date.now() / 1000;
       const HOLD_TO_PRINT = gestureSensitivityRef.current;
-      const HOLD_TO_REPEAT = 2.5; // Drastically increased to prevent accidental double-letters
+      const HOLD_TO_REPEAT = 1.5; // Drastically increased to prevent accidental double-letters
       const HOLD_TO_PRINT_DELETE = gestureSensitivityRef.current;
       const HOLD_TO_REPEAT_DELETE = gestureSensitivityRef.current;
       const HOLD_TO_CLEAR_ALL = 3.0;

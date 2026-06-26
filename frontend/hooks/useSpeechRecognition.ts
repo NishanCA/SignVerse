@@ -33,6 +33,22 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
     setIsSpeaking(false);
   }, []);
 
+  const pauseSpeech = useCallback(() => {
+    if (!micActiveRef.current) return;
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      try { recognitionRef.current.abort(); } catch {}
+      recognitionRef.current = null;
+    }
+    setMicStatus("idle");
+    setIsSpeaking(false);
+  }, []);
+
+  const resumeSpeech = useCallback(() => {
+    if (!micActiveRef.current) return;
+    startSpeech();
+  }, [startSpeech]);
+
   const startSpeech = useCallback(() => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
       console.warn("[Speech] SpeechRecognition API not available in this browser");
@@ -148,5 +164,5 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { micActive, micStatus, isSpeaking, toggleMic, startSpeech, stopSpeech };
+  return { micActive, micStatus, isSpeaking, toggleMic, startSpeech, stopSpeech, pauseSpeech, resumeSpeech };
 }

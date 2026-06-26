@@ -80,6 +80,8 @@ export default function ConversationScreen() {
   const [webcamVisible, setWebcamVisible] = useState(true);
 
   // ── Conversation engine ───────────────────────────────────────────────────
+  const [ttsPlaying, setTtsPlaying] = useState(false);
+
   const {
     inputText,
     setInputTextWithRef,
@@ -92,7 +94,12 @@ export default function ConversationScreen() {
     handleHandAbsent,
     processSpeech,
     setAvatarText,
-  } = useConversationEngine({ selectedLang, gestureSensitivity });
+  } = useConversationEngine({ 
+    selectedLang, 
+    gestureSensitivity,
+    onTtsStart: () => setTtsPlaying(true),
+    onTtsEnd: () => setTtsPlaying(false),
+  });
 
   // ── Autocomplete ──────────────────────────────────────────────────────────
   const { suggestions } = useAutocomplete({ inputText, smartSuggestions });
@@ -108,9 +115,18 @@ export default function ConversationScreen() {
   });
 
   // ── Speech recognition ────────────────────────────────────────────────────
-  const { micActive, micStatus, isSpeaking, toggleMic } = useSpeechRecognition({
+  const { micActive, micStatus, isSpeaking, toggleMic, pauseSpeech, resumeSpeech } = useSpeechRecognition({
     onSpeechResult: processSpeech,
   });
+
+  // Mute mic when TTS is playing or when hands are on screen signing
+  useEffect(() => {
+    if (ttsPlaying || handsVisible) {
+      pauseSpeech();
+    } else {
+      resumeSpeech();
+    }
+  }, [ttsPlaying, handsVisible, pauseSpeech, resumeSpeech]);
 
   // ── Auto-scroll messages ──────────────────────────────────────────────────
   const messagesEndRef = useRef<HTMLDivElement>(null);
