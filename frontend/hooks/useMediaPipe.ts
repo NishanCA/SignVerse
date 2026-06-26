@@ -43,6 +43,8 @@ export function useMediaPipe({
   const handPresentRef = useRef(false);
   const twoHandsStartTimeRef = useRef<number | null>(null);
   const twoHandsTargetRef = useRef<number | null>(null);
+  const lastInferenceTimeRef = useRef<number>(0);
+  const THROTTLE_MS = 250; // Max 4 classifications per second
 
   // Keep callbacks in refs so MediaPipe closure never becomes stale
   const onGestureDetectedRef = useRef(onGestureDetected);
@@ -174,8 +176,10 @@ export function useMediaPipe({
           }
         }
 
-        if (leftHandLms && !classifyPendingRef.current && suggestionsRef.current.length > 0) {
+        const now = Date.now();
+        if (leftHandLms && !classifyPendingRef.current && suggestionsRef.current.length > 0 && (now - lastInferenceTimeRef.current >= THROTTLE_MS)) {
           classifyPendingRef.current = true;
+          lastInferenceTimeRef.current = now;
           const w = results.image?.width || videoRef.current?.videoWidth || 640;
           const h = results.image?.height || videoRef.current?.videoHeight || 480;
 
@@ -250,8 +254,10 @@ export function useMediaPipe({
         const w = results.image?.width || videoRef.current?.videoWidth || 640;
         const h = results.image?.height || videoRef.current?.videoHeight || 480;
 
-        if (classifyPendingRef.current) continue;
+        const now = Date.now();
+        if (classifyPendingRef.current || (now - lastInferenceTimeRef.current < THROTTLE_MS)) continue;
         classifyPendingRef.current = true;
+        lastInferenceTimeRef.current = now;
 
         // FIX 3: non-blocking — returns immediately, MediaPipe continues
         try {

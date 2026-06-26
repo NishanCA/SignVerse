@@ -64,6 +64,67 @@ def initialize_wordsegment():
         wordsegment.load()
         _wordsegment_loaded = True
 
+# ──────────────────────────────────────────────────────────────────────────────
+# TFLite Lazy Loading Helpers
+# ──────────────────────────────────────────────────────────────────────────────
+BASE_DIR = os.path.dirname(__file__)
+MODEL_DIR = os.path.join(BASE_DIR, "..", "hand-gesture-recognition-mediapipe-main", "model")
+
+KEYPOINT_MODEL_PATH = os.path.join(MODEL_DIR, "keypoint_classifier", "keypoint_classifier.tflite")
+KEYPOINT_LABEL_PATH = os.path.join(MODEL_DIR, "keypoint_classifier", "keypoint_classifier_label.csv")
+
+NUMBER_MODEL_PATH   = os.path.join(MODEL_DIR, "number_classifier", "number_classifier.tflite")
+NUMBER_LABEL_PATH   = os.path.join(MODEL_DIR, "number_classifier", "number_classifier_label.csv")
+
+def load_labels(path: str) -> list[str]:
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            return [row[0].strip() for row in csv.reader(f) if row]
+    except Exception as e:
+        print(f"[WARN] Could not load labels from {path}: {e}")
+        return []
+
+keypoint_labels = []
+number_labels = []
+kp_interp, kp_in, kp_out = None, None, None
+nb_interp, nb_in, nb_out = None, None, None
+_tflite_loaded = False
+
+def get_tflite_models():
+    global _tflite_loaded, kp_interp, kp_in, kp_out, nb_interp, nb_in, nb_out
+    global keypoint_labels, number_labels
+    if not _tflite_loaded:
+        print("[INFO] Initializing lightweight TFLite models...")
+        import tflite_runtime.interpreter as tflite
+        
+        keypoint_labels = load_labels(KEYPOINT_LABEL_PATH)
+        number_labels   = load_labels(NUMBER_LABEL_PATH)
+        
+        def load_tflite_internal(path: str):
+            try:
+                interp = tflite.Interpreter(model_path=os.path.abspath(path), num_threads=1)
+                interp.allocate_tensors()
+                in_idx  = interp.get_input_details()[0]["index"]
+                out_idx = interp.get_output_details()[0]["index"]
+                return interp, in_idx, out_idx
+            except Exception as e:
+                print(f"[ERROR] Could not load TFLite model {path}: {e}")
+                return None, None, None
+                
+        kp_interp, kp_in, kp_out = load_tflite_internal(KEYPOINT_MODEL_PATH)
+        nb_interp, nb_in, nb_out = load_tflite_internal(NUMBER_MODEL_PATH)
+        _tflite_loaded = True
+
+def run_tflite(interp, in_idx, out_idx, landmark_arr: np.ndarray) -> tuple[int, float]:
+    """Run inference and return (result_index, confidence)."""
+    interp.set_tensor(in_idx, landmark_arr)
+    interp.invoke()
+    result = interp.get_tensor(out_idx)
+    squeezed = np.squeeze(result)
+    idx = int(np.argmax(squeezed))
+    conf = float(squeezed[idx])
+    return idx, conf
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Pydantic models
@@ -80,6 +141,10 @@ class CheckWordRequest(BaseModel):
 
 class SegmentRequest(BaseModel):
     text: str
+
+class ClassifyRequest(BaseModel):
+    landmarks: list[float]   # 42 pre-processed floats
+    hand_side: str           # "Right" (letters) or "Left" (numbers)
 
 
 
@@ -98,6 +163,28 @@ def read_root():
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+@app.post("/api/classify")
+def classify_gesture(req: ClassifyRequest):
+    if len(req.landmarks) != 42:
+        raise HTTPException(status_code=400, detail=f"Expected 42 values, got {len(req.landmarks)}")
+
+    get_tflite_models()
+
+    arr = np.array([req.landmarks], dtype=np.float32)
+
+    if req.hand_side == "Right":
+        if kp_interp is None:
+            raise HTTPException(status_code=503, detail="Keypoint classifier not loaded")
+        idx, conf = run_tflite(kp_interp, kp_in, kp_out, arr)
+        label = keypoint_labels[idx] if idx < len(keypoint_labels) else "?"
+    else:  # Left
+        if nb_interp is None:
+            raise HTTPException(status_code=503, detail="Number classifier not loaded")
+        idx, conf = run_tflite(nb_interp, nb_in, nb_out, arr)
+        label = number_labels[idx] if idx < len(number_labels) else "?"
+
+    return {"label": label, "index": idx, "confidence": conf, "hand_side": req.hand_side}
 
 
 @app.post("/api/transcribe")
