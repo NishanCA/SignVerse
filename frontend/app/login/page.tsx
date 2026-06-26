@@ -20,14 +20,7 @@ export default function LoginScreen() {
     setLoading(true);
     setError("");
     try {
-      // Check if we are using the dummy key (or no key)
-      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY === "AIzaSyDummyKey") {
-        // Mock login for demo purposes to test the app flow
-        setTimeout(() => {
-          router.push("/profile");
-        }, 1000);
-        return;
-      }
+
 
       const result = await signInWithPopup(auth, googleProvider);
       

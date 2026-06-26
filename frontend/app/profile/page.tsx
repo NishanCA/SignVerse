@@ -70,6 +70,8 @@ export default function ProfileScreen() {
             // Brand new user
             setFormData({
               ...defaultProfile,
+              fullName: user.displayName || "",
+              profilePhoto: user.photoURL || "",
               email: user.email || "",
             });
             setIsNewUser(true);
