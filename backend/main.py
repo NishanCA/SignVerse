@@ -97,7 +97,7 @@ def get_tflite_models():
     if not _tflite_loaded:
         print("[INFO] Initializing lightweight TFLite models...")
         try:
-            import tflite_runtime.interpreter as tflite
+            from tensorflow.lite.python.interpreter import Interpreter
         except ImportError as e:
             _tflite_error = f"ImportError: {e}"
             print(_tflite_error)
@@ -113,7 +113,7 @@ def get_tflite_models():
                 abs_path = os.path.abspath(path)
                 if not os.path.exists(abs_path):
                     raise FileNotFoundError(f"File not found: {abs_path}")
-                interp = tflite.Interpreter(model_path=abs_path, num_threads=1)
+                interp = Interpreter(model_path=abs_path, num_threads=1)
                 interp.allocate_tensors()
                 in_idx  = interp.get_input_details()[0]["index"]
                 out_idx = interp.get_output_details()[0]["index"]

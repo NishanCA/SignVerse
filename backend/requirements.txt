@@ -8,4 +8,4 @@ pyspellchecker
 wordsegment
 edge-tts
 requests
-tflite-runtime
+tensorflow-cpu
