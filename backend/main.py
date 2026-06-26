@@ -67,7 +67,7 @@ def initialize_wordsegment():
 # ──────────────────────────────────────────────────────────────────────────────
 # TFLite Lazy Loading Helpers
 # ──────────────────────────────────────────────────────────────────────────────
-BASE_DIR = os.path.dirname(__file__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "..", "hand-gesture-recognition-mediapipe-main", "model")
 
 KEYPOINT_MODEL_PATH = os.path.join(MODEL_DIR, "keypoint_classifier", "keypoint_classifier.tflite")
@@ -89,26 +89,38 @@ number_labels = []
 kp_interp, kp_in, kp_out = None, None, None
 nb_interp, nb_in, nb_out = None, None, None
 _tflite_loaded = False
+_tflite_error = None
 
 def get_tflite_models():
     global _tflite_loaded, kp_interp, kp_in, kp_out, nb_interp, nb_in, nb_out
-    global keypoint_labels, number_labels
+    global keypoint_labels, number_labels, _tflite_error
     if not _tflite_loaded:
         print("[INFO] Initializing lightweight TFLite models...")
-        import tflite_runtime.interpreter as tflite
-        
+        try:
+            import tflite_runtime.interpreter as tflite
+        except ImportError as e:
+            _tflite_error = f"ImportError: {e}"
+            print(_tflite_error)
+            _tflite_loaded = True # Prevent infinite retry
+            return
+            
         keypoint_labels = load_labels(KEYPOINT_LABEL_PATH)
         number_labels   = load_labels(NUMBER_LABEL_PATH)
         
         def load_tflite_internal(path: str):
+            global _tflite_error
             try:
-                interp = tflite.Interpreter(model_path=os.path.abspath(path), num_threads=1)
+                abs_path = os.path.abspath(path)
+                if not os.path.exists(abs_path):
+                    raise FileNotFoundError(f"File not found: {abs_path}")
+                interp = tflite.Interpreter(model_path=abs_path, num_threads=1)
                 interp.allocate_tensors()
                 in_idx  = interp.get_input_details()[0]["index"]
                 out_idx = interp.get_output_details()[0]["index"]
                 return interp, in_idx, out_idx
             except Exception as e:
-                print(f"[ERROR] Could not load TFLite model {path}: {e}")
+                _tflite_error = f"Error loading {path}: {e}"
+                print(f"[ERROR] {_tflite_error}")
                 return None, None, None
                 
         kp_interp, kp_in, kp_out = load_tflite_internal(KEYPOINT_MODEL_PATH)
@@ -175,12 +187,12 @@ def classify_gesture(req: ClassifyRequest):
 
     if req.hand_side == "Right":
         if kp_interp is None:
-            raise HTTPException(status_code=503, detail="Keypoint classifier not loaded")
+            raise HTTPException(status_code=503, detail=f"Keypoint classifier not loaded. Error: {_tflite_error}")
         idx, conf = run_tflite(kp_interp, kp_in, kp_out, arr)
         label = keypoint_labels[idx] if idx < len(keypoint_labels) else "?"
     else:  # Left
         if nb_interp is None:
-            raise HTTPException(status_code=503, detail="Number classifier not loaded")
+            raise HTTPException(status_code=503, detail=f"Number classifier not loaded. Error: {_tflite_error}")
         idx, conf = run_tflite(nb_interp, nb_in, nb_out, arr)
         label = number_labels[idx] if idx < len(number_labels) else "?"
 
