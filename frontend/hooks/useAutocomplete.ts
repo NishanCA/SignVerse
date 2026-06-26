@@ -97,6 +97,15 @@ export function useAutocomplete({ inputText, smartSuggestions, messagesLength }:
   }, [messagesLength, shuffleStarters]);
 
   useEffect(() => {
+    const words = inputText.trim().split(/\s+/).filter(Boolean);
+
+    // Always show starters if input is empty
+    if (words.length === 0) {
+      setSuggestions(currentStarters);
+      previousSentenceRef.current = inputText;
+      return;
+    }
+
     if (!smartSuggestions) {
       console.log("[Pipeline] autocomplete skipped");
       setSuggestions([]);
@@ -107,13 +116,6 @@ export function useAutocomplete({ inputText, smartSuggestions, messagesLength }:
     // Skip if sentence hasn't changed since last call
     if (inputText === previousSentenceRef.current) return;
     previousSentenceRef.current = inputText;
-
-    const words = inputText.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) {
-      // Auto-shuffle if they cleared text after typing something (optional UX, but we rely on replies tracker)
-      setSuggestions(currentStarters);
-      return;
-    }
 
     const timeoutId = setTimeout(() => {
       console.log("[Pipeline] autocomplete started");
@@ -131,7 +133,7 @@ export function useAutocomplete({ inputText, smartSuggestions, messagesLength }:
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [inputText, smartSuggestions]);
+  }, [inputText, smartSuggestions, currentStarters]);
 
   return { suggestions };
 }
