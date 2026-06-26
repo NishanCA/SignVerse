@@ -119,14 +119,14 @@ export default function ConversationScreen() {
     onSpeechResult: processSpeech,
   });
 
-  // Mute mic when TTS is playing or when hands are on screen signing
+  // Mute mic only when TTS is playing
   useEffect(() => {
-    if (ttsPlaying || handsVisible) {
+    if (ttsPlaying) {
       pauseSpeech();
     } else {
       resumeSpeech();
     }
-  }, [ttsPlaying, handsVisible, pauseSpeech, resumeSpeech]);
+  }, [ttsPlaying, pauseSpeech, resumeSpeech]);
 
   // ── Auto-scroll messages ──────────────────────────────────────────────────
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -223,7 +223,7 @@ export default function ConversationScreen() {
           currentHand={currentHand}
           handsVisible={handsVisible}
           isSpeaking={isSpeaking}
-          micStatus={micStatus}
+          micStatus={handsVisible ? "idle" : micStatus}
           webcamVisible={webcamVisible}
         />
 
