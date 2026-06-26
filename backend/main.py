@@ -53,21 +53,7 @@ def get_whisper_model():
     return _whisper_model
 
 
-_autocomplete_model = None
-_autocomplete_loaded = False
-def get_autocomplete_model():
-    global _autocomplete_model, _autocomplete_loaded
-    if not _autocomplete_loaded:
-        print("[INFO] Loading Autocomplete model (distilgpt2)...")
-        from transformers import pipeline
-        try:
-            _autocomplete_model = pipeline("text-generation", model="distilgpt2", device=-1)
-            print("[OK] Autocomplete model loaded.")
-        except Exception as e:
-            print(f"[ERROR] Could not load autocomplete model: {e}")
-            _autocomplete_model = None
-        _autocomplete_loaded = True
-    return _autocomplete_model
+
 
 
 _wordsegment_loaded = False
@@ -214,32 +200,8 @@ def autocomplete_sentence(req: AutocompleteRequest):
 
             combined = prefix_matches + other_matches
             return {"sentence": prefix, "suggestions": combined[:5]}
-
-        # 3. GPT-2 fallback
-        model = get_autocomplete_model()
-        if model is None:
-            return {"sentence": prefix, "suggestions": []}
-
-        try:
-            results = model(
-                prefix,
-                max_new_tokens=4,
-                num_return_sequences=2,
-                do_sample=True,
-                temperature=0.7,
-                pad_token_id=model.tokenizer.eos_token_id
-            )
-            suggestions = []
-            for r in results:
-                text = r["generated_text"]
-                if text.startswith(prefix) and text != prefix:
-                    clean_suggestion = text.strip()
-                    if clean_suggestion not in suggestions:
-                        suggestions.append(clean_suggestion)
-            return {"sentence": prefix, "suggestions": suggestions[:2]}
-        except Exception as e:
-            print(f"[Autocomplete] GPT-2 inference failed: {e}")
-            return {"sentence": prefix, "suggestions": []}
+            
+        return {"sentence": prefix, "suggestions": []}
 
     except Exception as e:
         # Top-level catch — autocomplete failures must never crash the backend

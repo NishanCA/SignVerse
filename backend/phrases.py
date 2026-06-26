@@ -10,7 +10,8 @@ COMMON_PHRASES = [
     "See you soon", "See you tomorrow", "Goodbye", "Bye bye", "Farewell",
     "Welcome", "How do you do?", "What's going on?", "Greetings",
     "I am fine, thank you", "I am doing well", "Not bad", "Could be better",
-    "I am great", "Everything is good", "I am okay",
+    "I am great", "Everything is good", "I am okay", "I am doing great",
+    "I'm fine", "I'm doing well", "I'm good",
     
     # ── Personal Info & Small Talk ──
     "What is your name?", "My name is", "Where are you from?", "I am from",
@@ -22,6 +23,8 @@ COMMON_PHRASES = [
     "Do you have siblings?", "I have a brother", "I have a sister", "I am an only child",
     "Do you have pets?", "I have a dog", "I have a cat", "What do you do for fun?",
     "I like reading", "I like watching movies", "I love playing sports", "I like traveling",
+    "I love listening to music", "I like playing video games", "I enjoy cooking",
+    "What are your plans for today?", "What are you doing this weekend?", "Did you have a good weekend?",
     
     # ── Needs, Wants & Feelings ──
     "I want", "I need", "I would like", "Can I have", "Could you give me",
@@ -32,6 +35,7 @@ COMMON_PHRASES = [
     "I love you", "I miss you", "I hate this", "This is great", "This is terrible",
     "I am scared", "I am worried", "I am surprised", "I feel better now",
     "I need water", "I want food", "I need to rest", "I want to sleep",
+    "I need to go to the bathroom", "I feel dizzy", "I have a headache", "My stomach hurts",
     
     # ── Help, Clarification & Communication ──
     "Can you help me?", "I need help", "Please help me", "Could you do me a favor?",
@@ -46,6 +50,8 @@ COMMON_PHRASES = [
     "Can you write it down?", "Please write it", "Are you deaf?", "Are you hard of hearing?",
     "I am deaf", "I am hard of hearing", "I am hearing", "Do you know ASL?",
     "I am learning sign language", "Sign slower please", "Watch me", "Pay attention",
+    "What did you say?", "Could you explain that?", "I have a question", "Can you show me?",
+    "Just a moment", "One second please",
     
     # ── Time, Weather & Environment ──
     "What time is it?", "Do you have the time?", "It is early", "It is late",
@@ -56,6 +62,7 @@ COMMON_PHRASES = [
     "It is windy", "Beautiful day today", "Terrible weather", "Is it raining?",
     "Wait for me", "I will be right back", "Give me a second", "It is time to go",
     "Are you ready?", "Not yet", "Hurry up", "Take your time",
+    "I am running late", "I will be there soon", "What day is it?", "What is the date?",
     
     # ── Directions & Locations ──
     "Where is the bathroom?", "Where is the toilet?", "Where are we?",
@@ -64,6 +71,7 @@ COMMON_PHRASES = [
     "Where is the entrance?", "Where is the exit?", "Where is the elevator?",
     "Where are the stairs?", "I am looking for", "Can you show me the way?",
     "Where do I park?", "Is there parking?", "I am lost", "Can you give me directions?",
+    "I need to go to", "Take me to", "Where is the nearest", "How many miles?",
     
     # ── Food & Dining ──
     "Let's eat", "I am starving", "What is for dinner?", "What is for lunch?",
@@ -72,6 +80,8 @@ COMMON_PHRASES = [
     "More please", "No thank you", "I am allergic to", "Do you have a menu?",
     "I would like to order", "What do you recommend?", "Is it spicy?",
     "I am a vegetarian", "I am vegan", "No meat please", "I am finished",
+    "I would like a coffee", "Can I have a table for two?", "This is too salty", "This is too sweet",
+    "Can I get a box?", "Keep the change",
     
     # ── Shopping & Money ──
     "How much is this?", "How much does it cost?", "It is too expensive",
@@ -79,6 +89,7 @@ COMMON_PHRASES = [
     "I am just looking", "Do you have this in", "What size is this?",
     "Where is the fitting room?", "Can I return this?", "I need a receipt",
     "Are there any discounts?", "I am looking for a gift", "It is too big", "It is too small",
+    "Do you have a smaller size?", "Do you have a bigger size?", "Where is the checkout?",
     
     # ── Travel & Emergencies ──
     "Where is the hospital?", "Where is the police station?", "Call the police",
@@ -88,6 +99,13 @@ COMMON_PHRASES = [
     "Where is the train station?", "Where is the bus stop?", "I need a taxi",
     "I have an emergency", "Please hurry", "Help is on the way", "Are you hurt?",
     "I am injured", "I need medicine", "Where is the pharmacy?",
+    "I need a doctor", "I lost my passport", "I need to go to the embassy",
+    
+    # ── Work & School ──
+    "I am going to work", "I am going to school", "I have a meeting",
+    "I am busy right now", "Let's take a break", "Can we schedule a meeting?",
+    "I have a deadline", "Did you finish your homework?", "What is the assignment?",
+    "I am working from home today", "I need to send an email", "Can you send me the file?",
     
     # ── Miscellaneous Conversational Fillers & Opinions ──
     "That is interesting", "That is funny", "That is crazy", "That makes sense",
@@ -98,7 +116,9 @@ COMMON_PHRASES = [
     "Oh my god", "Wow", "No way", "Really?", "I can't believe it",
     "That is amazing", "That is awful", "Good idea", "Bad idea",
     "I agree with you", "I see what you mean", "Exactly", "Absolutely",
-    "Of course", "Sure", "Why not?", "I am joking", "Just kidding"
+    "Of course", "Sure", "Why not?", "I am joking", "Just kidding",
+    "Let me think about it", "I will let you know", "Sounds good to me",
+    "That is terrible", "What a pity", "I am so happy for you", "I am so sorry to hear that"
 ]
 
 def get_starters(num=5):
@@ -109,6 +129,7 @@ def get_starters(num=5):
         "Where is the bathroom?", "I don't understand", "I am sorry",
         "Thank you", "See you later", "What's up?", "I need help",
         "How do you sign", "What is the weather like?", "Call an ambulance",
-        "I am learning sign language", "Please say that again", "I am hungry"
+        "I am learning sign language", "Please say that again", "I am hungry",
+        "What are you doing?", "I am tired", "Excuse me", "Are you ready?"
     ]
     return random.sample(starters, min(num, len(starters)))
