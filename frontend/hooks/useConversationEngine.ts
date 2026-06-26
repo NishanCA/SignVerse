@@ -22,11 +22,11 @@ function speakText(text: string, onStart?: () => void, onEnd?: () => void) {
   const audio = new Audio(
     `${BACKEND_URL}/api/tts?text=${encodeURIComponent(trimmedText)}`
   );
-  
+
   audio.onended = () => {
     onEnd?.();
   };
-  
+
   audio.play().catch(() => {
     if (!("speechSynthesis" in window)) {
       onEnd?.();
@@ -223,7 +223,7 @@ export function useConversationEngine({
       const now = Date.now() / 1000;
       const HOLD_TO_PRINT = gestureSensitivityRef.current;
       const HOLD_TO_REPEAT = 1.5; // Drastically increased to prevent accidental double-letters
-      const HOLD_TO_PRINT_DELETE = gestureSensitivityRef.current + 0.6; // Increased to prevent accidental delete before 2nd hand registers
+      const HOLD_TO_PRINT_DELETE = gestureSensitivityRef.current + 0.5; // Increased to prevent accidental delete before 2nd hand registers
       const HOLD_TO_REPEAT_DELETE = gestureSensitivityRef.current;
       const HOLD_TO_CLEAR_ALL = 3.0;
 

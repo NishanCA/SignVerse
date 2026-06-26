@@ -64,6 +64,47 @@ export function useMediaPipe({
   const [currentGesture, setCurrentGesture] = useState<string | null>(null);
   const [currentHand, setCurrentHand] = useState<"Right" | "Left" | null>(null);
   const [handsVisible, setHandsVisible] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+
+  const toggleCamera = useCallback(async () => {
+    const newMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(newMode);
+    
+    if (cameraRef.current) {
+      try {
+        cameraRef.current.stop();
+        if (videoRef.current?.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach((track) => track.stop());
+          videoRef.current.srcObject = null;
+        }
+      } catch (err) {
+        console.error("Camera stop error:", err);
+      }
+    }
+    
+    try {
+      const { Camera } = await import("@mediapipe/camera_utils");
+      const hands = handsRef.current;
+      if (!hands || !videoRef.current) return;
+
+      const camera = new Camera(videoRef.current, {
+        onFrame: async () => {
+          if (!videoRef.current) return;
+          try {
+            await hands.send({ image: videoRef.current });
+          } catch (err) {}
+        },
+        width: 640,
+        height: 480,
+        facingMode: newMode,
+      });
+      cameraRef.current = camera;
+      await camera.start();
+    } catch (err) {
+      console.error("Camera restart error:", err);
+    }
+  }, [facingMode]);
 
   // ── Draw skeleton ──────────────────────────────────────────────────────────
   // FIX 2: wrapped in try/catch so a canvas error never kills the results loop
@@ -407,5 +448,5 @@ export function useMediaPipe({
     };
   }, []); // ← empty deps: starts on mount, cleans up on unmount. Never restarts.
 
-  return { videoRef, canvasRef, currentGesture, currentHand, handsVisible };
+  return { videoRef, canvasRef, currentGesture, currentHand, handsVisible, toggleCamera };
 }

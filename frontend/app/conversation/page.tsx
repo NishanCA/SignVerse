@@ -105,7 +105,7 @@ export default function ConversationScreen() {
   const { suggestions } = useAutocomplete({ inputText, smartSuggestions });
 
   // ── MediaPipe ─────────────────────────────────────────────────────────────
-  const { videoRef, canvasRef, currentGesture, currentHand, handsVisible } = useMediaPipe({
+  const { videoRef, canvasRef, currentGesture, currentHand, handsVisible, toggleCamera } = useMediaPipe({
     onGestureDetected: handleGestureDetected,
     onHandPresent: () => {},           // no action needed: engine tracks hasGestured
     onHandAbsent: handleHandAbsent,    // 2000 ms → auto-send
@@ -194,21 +194,7 @@ export default function ConversationScreen() {
             {blabel}
           </div>
 
-          {/* Mic status */}
-          {micStatus !== "idle" && (
-            <div className="px-3 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/50 text-blue-100 text-xs font-semibold flex items-center gap-2">
-              <Mic size={12} className="animate-pulse" />
-              {micStatusLabel}
-            </div>
-          )}
-
-          {/* Live badge */}
-          <div className="px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/50 text-red-100 text-xs font-semibold flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            LIVE
-          </div>
-
-          <button className="p-2 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition-colors">
+          <button onClick={toggleCamera} className="p-2 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition-colors">
             <SwitchCamera size={20} />
           </button>
         </div>

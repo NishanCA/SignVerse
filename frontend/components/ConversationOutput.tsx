@@ -26,7 +26,7 @@ export default function ConversationOutput({
   onAvatarFinish,
 }: ConversationOutputProps) {
   return (
-    <div className="h-[40vh] bg-slate-900 border-t border-white/10 flex flex-col relative">
+    <div className="h-[30vh] bg-slate-900 border-t border-white/10 flex flex-col relative">
 
       {/* ── Messages ──────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
@@ -78,7 +78,7 @@ export function AvatarPanel({
   onAvatarFinish,
 }: AvatarPanelProps) {
   return (
-    <div className="w-1/3 md:w-1/2 relative overflow-hidden rounded-2xl flex flex-col items-center justify-center bg-slate-900">
+    <div className="w-1/3 md:w-1/3 relative overflow-hidden rounded-2xl flex flex-col items-center justify-center bg-slate-900">
       <Avatar3D
         signingText={avatarText}
         trigger={avatarTrigger}

@@ -689,15 +689,6 @@ export default function Avatar3D({ signingText, trigger, isActive = false, onFin
               </motion.div>
             </AnimatePresence>
           </motion.div>
-        ) : !previewMode ? (
-          <motion.p
-            key="idle-label"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="absolute bottom-6 text-sm text-slate-500 font-medium tracking-widest uppercase"
-          >
-            Awaiting Speech...
-          </motion.p>
         ) : null}
       </AnimatePresence>
     </div>
