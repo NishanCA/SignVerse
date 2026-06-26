@@ -103,7 +103,11 @@ export default function ConversationScreen() {
   });
 
   // ── Autocomplete ──────────────────────────────────────────────────────────
-  const { suggestions } = useAutocomplete({ inputText, smartSuggestions });
+  const { suggestions } = useAutocomplete({ 
+    inputText, 
+    smartSuggestions,
+    messagesLength: messages.length
+  });
 
   // ── MediaPipe ─────────────────────────────────────────────────────────────
   const { videoRef, canvasRef, currentGesture, currentHand, handsVisible, toggleCamera } = useMediaPipe({
