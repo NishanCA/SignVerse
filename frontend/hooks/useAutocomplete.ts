@@ -4,26 +4,57 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { BACKEND_URL } from "../lib/config";
 
 const STARTER_PHRASES = [
-  "HELLO HOW ARE YOU",
+  "HELLO",
+  "GOOD MORNING",
+  "GOOD AFTERNOON",
+  "GOOD EVENING",
+  "HOW ARE YOU",
+  "I AM FINE",
   "NICE TO MEET YOU",
+  "WHAT IS YOUR NAME",
+  "MY NAME IS",
+  "HOW CAN I HELP YOU",
+  "CAN YOU HELP ME",
   "I NEED HELP",
+  "PLEASE",
+  "THANK YOU",
+  "YOU ARE WELCOME",
+  "EXCUSE ME",
+  "SORRY",
   "YES",
   "NO",
-  "WHAT IS YOUR NAME",
-  "PLEASE WRITE IT DOWN",
-  "I AM DEAF",
-  "THANK YOU",
-  "GOODBYE",
-  "HOW CAN I HELP YOU",
-  "WHERE IS THE RESTROOM",
+  "MAYBE",
   "I DON'T UNDERSTAND",
   "PLEASE REPEAT",
-  "I AM FINE",
+  "PLEASE SPEAK SLOWLY",
+  "PLEASE WRITE IT DOWN",
+  "CAN YOU SAY THAT AGAIN",
+  "WAIT A MINUTE",
+  "ONE MOMENT PLEASE",
+  "I AM READY",
+  "LET'S START",
   "WHAT TIME IS IT",
-  "EXCUSE ME",
+  "WHAT DAY IS IT",
+  "WHERE ARE YOU GOING",
+  "WHERE IS THE RESTROOM",
+  "WHERE IS THE EXIT",
+  "WHERE IS THE ENTRANCE",
+  "HOW MUCH DOES IT COST",
+  "CAN YOU SHOW ME",
+  "I AM DEAF",
+  "I CAN READ LIPS",
+  "PLEASE LOOK AT ME",
+  "I NEED WATER",
+  "I NEED FOOD",
+  "I NEED A DOCTOR",
+  "CALL FOR HELP",
+  "I AM LOST",
+  "I AM HAPPY",
+  "I AM SAD",
   "I AGREE",
   "I DISAGREE",
-  "WAIT A MINUTE",
+  "SEE YOU LATER",
+  "GOODBYE",
 ];
 
 interface UseAutocompleteOptions {
@@ -94,8 +125,8 @@ export function useAutocomplete({ inputText, smartSuggestions, messagesLength }:
         .then((r) => r.json())
         .then((data) => setSuggestions(data.suggestions || []))
         .catch(() => {
-           console.log("[Pipeline] autocomplete failed");
-           setSuggestions([]);
+          console.log("[Pipeline] autocomplete failed");
+          setSuggestions([]);
         });
     }, 500);
 
