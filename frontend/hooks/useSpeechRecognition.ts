@@ -44,10 +44,6 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
     setIsSpeaking(false);
   }, []);
 
-  const resumeSpeech = useCallback(() => {
-    if (!micActiveRef.current) return;
-    startSpeech();
-  }, [startSpeech]);
 
   const startSpeech = useCallback(() => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
@@ -144,6 +140,11 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // startSpeech is intentionally stable — it reads micActiveRef, not micActive state
+
+  const resumeSpeech = useCallback(() => {
+    if (!micActiveRef.current) return;
+    startSpeech();
+  }, [startSpeech]);
 
   const toggleMic = useCallback(() => {
     const next = !micActiveRef.current;
