@@ -50,7 +50,8 @@ export async function predictSign(
     });
 
     if (!res.ok) {
-      console.warn("[Gesture] Server error:", res.status);
+      const errorText = await res.text();
+      console.warn("[Gesture] Server error:", res.status, errorText);
       return null;
     }
 
