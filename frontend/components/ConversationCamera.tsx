@@ -50,7 +50,7 @@ export default function ConversationCamera({
       {/* Landmark canvas */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full scale-x-[-1] pointer-events-none rounded-2xl"
+        className="absolute inset-0 w-full h-full object-cover scale-x-[-1] pointer-events-none rounded-2xl"
       />
 
       {/* Visual-only webcam hide overlay */}
