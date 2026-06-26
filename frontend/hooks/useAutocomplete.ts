@@ -28,7 +28,13 @@ export function useAutocomplete({ inputText, smartSuggestions }: UseAutocomplete
 
     const words = inputText.trim().split(/\s+/).filter(Boolean);
     if (words.length === 0) {
-      setSuggestions([]);
+      setSuggestions([
+        "HELLO HOW ARE YOU",
+        "NICE TO MEET YOU",
+        "I NEED HELP",
+        "YES",
+        "NO"
+      ]);
       return;
     }
 

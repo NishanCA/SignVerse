@@ -10,7 +10,7 @@ import { User, Camera, Save, Edit3, ChevronLeft, Phone, MapPin, Heart, Ruler, We
 import Navbar from "../../components/Navbar";
 import { useLanguage } from "../../context/LanguageContext";
 
-const disabilityOptions = ["Non-Hearing", "Non-Verbal", "Both", "None"];
+const disabilityOptions = ["Non-Hearing", "Non-Verbal", "Both"];
 
 interface ProfileData {
   fullName: string;
@@ -34,7 +34,7 @@ const defaultProfile: ProfileData = {
   phoneNumber: "",
   height: "",
   weight: "",
-  disabilityType: "None",
+  disabilityType: "Non-Hearing",
   emergencyContactName: "",
   emergencyContactNumber: "",
   profilePhoto: "",

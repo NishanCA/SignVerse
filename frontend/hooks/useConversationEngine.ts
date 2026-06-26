@@ -10,6 +10,7 @@ export type Message = {
   text: string;
   translation?: string;
   aslGloss?: string;
+  localOnly?: boolean;
 };
 
 // ─── TTS ───────────────────────────────────────────────────────────────────────
@@ -194,6 +195,21 @@ export function useConversationEngine({
     [translateText, setInputTextWithRef]
   );
 
+  // ── Inject initial greeting (not saved to history) ─────────────────────────
+  const injectInitialGreeting = useCallback((name: string, disability: string) => {
+    const text = `Hello, my name is ${name}. I am ${disability.toLowerCase()}.`;
+    const msgId = "greeting-" + Date.now();
+    setMessages((p) => {
+      if (p.some(m => m.localOnly)) return p; // prevent duplicates
+      return [...p, { id: msgId, sender: "user", text, localOnly: true }];
+    });
+    
+    // Add small delay to let UI render before speaking
+    setTimeout(() => {
+      speakText(text, onTtsStart, onTtsEnd);
+    }, 500);
+  }, [onTtsStart, onTtsEnd]);
+
   // ── Hand absent callback: auto-send after 2 s no-hand ─────────────────────
   const handleHandAbsent = useCallback(() => {
     const rawText = inputTextRef.current.trim();
@@ -291,5 +307,6 @@ export function useConversationEngine({
     handleHandAbsent,
     processSpeech,
     setAvatarText,
+    injectInitialGreeting,
   };
 }

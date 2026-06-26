@@ -94,6 +94,7 @@ export default function ConversationScreen() {
     handleHandAbsent,
     processSpeech,
     setAvatarText,
+    injectInitialGreeting,
   } = useConversationEngine({ 
     selectedLang, 
     gestureSensitivity,
@@ -139,12 +140,33 @@ export default function ConversationScreen() {
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => {
     return () => {
-      if (messagesRef.current.length > 0) {
-        userService.addConversation(messagesRef.current);
+      const historyMessages = messagesRef.current.filter(m => !m.localOnly);
+      if (historyMessages.length > 0) {
+        userService.addConversation(historyMessages);
         userService.incrementConversationCount();
       }
     };
   }, []);
+
+  // ── Inject Initial Greeting ───────────────────────────────────────────────
+  const hasInjectedGreetingRef = useRef(false);
+  useEffect(() => {
+    if (hasInjectedGreetingRef.current) return;
+    hasInjectedGreetingRef.current = true;
+    
+    const pStr = localStorage.getItem("userProfile");
+    if (pStr) {
+      try {
+        const p = JSON.parse(pStr);
+        if (p.fullName && p.disabilityType && p.disabilityType !== "None") {
+           // We add a tiny delay to ensure TTS engine is ready
+           setTimeout(() => {
+             injectInitialGreeting(p.fullName, p.disabilityType);
+           }, 1000);
+        }
+      } catch(e) {}
+    }
+  }, [injectInitialGreeting]);
 
   // ── Backend status badge ──────────────────────────────────────────────────
   const bbg =
