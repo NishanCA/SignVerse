@@ -22,6 +22,7 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
   const stopSpeech = useCallback(() => {
     if (recognitionRef.current) {
       recognitionRef.current.onend = null; // prevent auto-restart
+      recognitionRef.current.onerror = null; // prevent 'aborted' fatal error
       try {
         recognitionRef.current.abort();
       } catch {
@@ -37,6 +38,7 @@ export function useSpeechRecognition({ onSpeechResult }: UseSpeechRecognitionOpt
     if (!micActiveRef.current) return;
     if (recognitionRef.current) {
       recognitionRef.current.onend = null;
+      recognitionRef.current.onerror = null; // prevent 'aborted' fatal error
       try { recognitionRef.current.abort(); } catch {}
       recognitionRef.current = null;
     }
