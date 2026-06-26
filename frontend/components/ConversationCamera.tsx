@@ -43,7 +43,7 @@ export default function ConversationCamera({
       {/* Speaking blur overlay */}
       <div
         className={`absolute inset-0 w-full h-full rounded-2xl transition-all duration-300 pointer-events-none ${
-          isSpeaking ? "backdrop-blur-md bg-black/30" : ""
+          isSpeaking && !handsVisible ? "backdrop-blur-md bg-black/30" : ""
         }`}
       />
 
@@ -61,7 +61,7 @@ export default function ConversationCamera({
       )}
 
       {/* Speaking / Listening overlay */}
-      {webcamVisible && isSpeaking && (
+      {webcamVisible && isSpeaking && !handsVisible && (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black/30 backdrop-blur-sm">
           <Mic className="text-cyan-400 animate-pulse w-12 h-12 mb-4" />
           <span className="text-cyan-300 font-bold text-xl tracking-widest animate-pulse">
