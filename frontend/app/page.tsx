@@ -4,6 +4,9 @@
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "../lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import { useLanguage } from "../context/LanguageContext";
 
 const floatingEmojis = ["🤟", "👋", "🙌", "👍", "✌️", "🤌", "👐", "🤝", "👏", "🖐️", "👇", "👊", "🤚", "🤞", "🤘", "🫶"];
@@ -15,7 +18,27 @@ export default function WelcomeScreen() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    // Auto-login logic
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.profileComplete && userData.settingsComplete) {
+              router.push("/home");
+            }
+          }
+        } catch (err) {
+          console.error("Auto-login failed:", err);
+        }
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [router]);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6">

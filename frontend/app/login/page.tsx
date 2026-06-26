@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import { ChevronLeft, LogIn } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, setPersistence, browserLocalPersistence, browserSessionPersistence, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, googleProvider, db } from "../../lib/firebase";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -15,13 +15,42 @@ export default function LoginScreen() {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user && !loading) {
+        setLoading(true);
+        try {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            if (userData.profileComplete && userData.settingsComplete) {
+              router.push("/home");
+            } else if (userData.profileComplete && !userData.settingsComplete) {
+              router.push("/settings");
+            } else {
+              router.push("/profile");
+            }
+          } else {
+            router.push("/profile");
+          }
+        } catch (err) {
+          console.error("Auto-login failed:", err);
+          setLoading(false);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError("");
     try {
-
-
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const result = await signInWithPopup(auth, googleProvider);
       
       // Check if user profile exists in Firestore
@@ -88,6 +117,26 @@ export default function LoginScreen() {
             {error}
           </div>
         )}
+
+        <div className="w-full mb-6 flex items-center gap-3 px-2">
+          <div 
+            className="w-6 h-6 rounded-md border-2 border-slate-500 flex items-center justify-center cursor-pointer transition-colors hover:border-purple-400"
+            style={{ backgroundColor: rememberMe ? '#a855f7' : 'transparent', borderColor: rememberMe ? '#a855f7' : '' }}
+            onClick={() => setRememberMe(!rememberMe)}
+          >
+            {rememberMe && (
+              <svg width="14" height="10" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 5L5 9L13 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+          <span 
+            className="text-slate-300 cursor-pointer select-none"
+            onClick={() => setRememberMe(!rememberMe)}
+          >
+            Remember me
+          </span>
+        </div>
 
         <motion.button
           whileHover={{ scale: 1.03 }}
