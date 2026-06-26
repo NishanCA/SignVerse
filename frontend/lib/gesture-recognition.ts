@@ -56,6 +56,8 @@ export async function predictSign(
     }
 
     const data = await res.json();
+    console.log("[Gesture DEBUG] API Response:", data);
+    
     if (data && data.label && data.label !== "?" && data.confidence > 0.5) {
       return data.label;
     }
