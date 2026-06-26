@@ -2,34 +2,69 @@
  * gesture-recognition.ts
  *
  * MediaPipe Hands runs entirely in the browser (fast, no lag).
- * The 42 landmark floats are sent to the Python FastAPI backend
- * which runs the SAME TFLite model as app.py — guaranteeing identical results.
- *
- * No browser-side TFLite needed → no WASM issues, no CDN failures.
+ * The 42 landmark floats are now processed entirely locally via
+ * TensorFlow.js TFLite, eliminating backend lag and timeouts.
  */
 
-import { BACKEND_URL } from "./config";
+let kpModel: any = null;
+let nbModel: any = null;
+let keypointLabels: string[] = [];
+let numberLabels: string[] = [];
 
-// ── Throttle /api/classify to max 2.5 requests/sec (400 ms gate) ──────────
-// This only limits backend HTTP calls. It does NOT block gesture detection
-// or UI updates — those happen every frame regardless.
-let lastClassificationTime = 0;
-const CLASSIFY_THROTTLE_MS = 400;
+let modelsLoaded = false;
+let modelsLoading = false;
 
-// ── NOTE: Duplicate gesture dedup (1000 ms) WAS HERE but was removed. ─────
-// The gesture state machine in useConversationEngine depends on receiving
-// onGestureDetected on every classify result so hold-timers can accumulate.
-// Deduplication at this layer prevents the state machine from ever confirming
-// a held gesture, breaking letter printing entirely. Dedup is intentionally
-// NOT applied here.
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.crossOrigin = 'anonymous';
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
 
-/**
- * Normalises hand landmarks exactly as Python's pre_process_landmark():
- *  1. Convert [0-1] relative coords → pixel coords
- *  2. Shift so wrist (landmark 0) is the origin
- *  3. Flatten to 1-D array of 42 values
- *  4. Divide every value by max-absolute-value → range [-1, 1]
- */
+
+export async function loadGestureModel() {
+  if (modelsLoaded || modelsLoading) return true;
+  modelsLoading = true;
+  try {
+    // Load TF and TFLite from CDN
+    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.9/dist/tf-tflite.min.js');
+
+    const tf = (window as any).tf;
+    const tflite = (window as any).tflite;
+
+    // Set WASM path to a fast CDN
+    tflite.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.9/dist/');
+
+    // Load models
+    kpModel = await tflite.loadTFLiteModel('/models/keypoint_classifier.tflite');
+    nbModel = await tflite.loadTFLiteModel('/models/number_classifier.tflite');
+
+    // Load labels
+    const res = await fetch('/models/labels.json');
+    const data = await res.json();
+    keypointLabels = data.keypoint || [];
+    numberLabels = data.number || [];
+
+    modelsLoaded = true;
+    console.log("[Gesture] TFJS TFLite models loaded successfully!");
+    return true;
+  } catch (err) {
+    console.error("[Gesture] Failed to load local TFLite models:", err);
+    return false;
+  } finally {
+    modelsLoading = false;
+  }
+}
+
 export function preProcessLandmark(
   landmarks: Array<{ x: number; y: number }>,
   imageWidth: number,
@@ -52,57 +87,50 @@ export function preProcessLandmark(
   return flat.map((n) => n / maxVal);
 }
 
-/**
- * Send 42 landmark floats + hand side to the backend.
- * - hand_side "Right" → keypoint classifier → letters / Delete
- * - hand_side "Left"  → number classifier  → 0-9
- * Returns null if confidence < 0.5, throttled, or request fails.
- *
- * Throttled to 400 ms between HTTP calls — backend protection only.
- * Gesture outputs are NOT deduplicated here; the state machine in
- * useConversationEngine handles repeated gestures for hold-to-print.
- */
 export async function predictSign(
   flatLandmarks: number[],
   hand_side: string = "Right"
 ): Promise<string | null> {
-  const now = Date.now();
-
-  // Throttle: limit backend HTTP calls, but emit null so classifyPendingRef
-  // is released immediately and next frames can still be processed.
-  if (now - lastClassificationTime < CLASSIFY_THROTTLE_MS) {
-    console.log("[Gesture] skipped: throttle (backend rate limit, not blocking state machine)");
-    return null;
-  }
-  lastClassificationTime = now;
+  if (!modelsLoaded) return null;
 
   try {
-    const res = await fetch(`${BACKEND_URL}/api/classify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ landmarks: flatLandmarks, hand_side }),
-    });
-    if (!res.ok) {
-      console.log("[Gesture] skipped: backend returned", res.status);
+    const tf = (window as any).tf;
+    const tensor = tf.tensor([flatLandmarks], [1, 42], 'float32');
+    let outputTensor: any;
+    let labels: string[];
+
+    if (hand_side === "Right") {
+      if (!kpModel) return null;
+      outputTensor = kpModel.predict(tensor);
+      labels = keypointLabels;
+    } else {
+      if (!nbModel) return null;
+      outputTensor = nbModel.predict(tensor);
+      labels = numberLabels;
+    }
+
+    const outputData = await outputTensor.data();
+    tensor.dispose();
+    outputTensor.dispose();
+
+    // Find the max value and index
+    let maxIdx = 0;
+    let maxVal = outputData[0];
+    for (let i = 1; i < outputData.length; i++) {
+      if (outputData[i] > maxVal) {
+        maxVal = outputData[i];
+        maxIdx = i;
+      }
+    }
+
+    if (maxVal < 0.5) {
       return null;
     }
-    const data = await res.json();
 
-    if (data.confidence < 0.5) {
-      console.log("[Gesture] skipped: low confidence", data.confidence?.toFixed(2));
-      return null;
-    }
-
-    const label = data.label as string;
-    console.log("[Gesture] predicted:", label, "confidence:", data.confidence?.toFixed(2));
+    const label = labels[maxIdx] || "?";
     return label;
   } catch (err) {
-    console.log("[Gesture] skipped: fetch error", err);
+    console.error("[Gesture] Inference error:", err);
     return null;
   }
-}
-
-/** No-op: kept for API compatibility. Model is loaded on the backend. */
-export async function loadGestureModel() {
-  return true;
 }

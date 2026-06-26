@@ -4,7 +4,6 @@ faster-whisper
 deep-translator
 python-multipart
 numpy
-tensorflow-cpu
 pyspellchecker
 wordsegment
 edge-tts

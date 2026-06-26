@@ -2,7 +2,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { preProcessLandmark, predictSign } from "../lib/gesture-recognition";
+import { preProcessLandmark, predictSign, loadGestureModel } from "../lib/gesture-recognition";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface UseMediaPipeOptions {
@@ -303,6 +303,9 @@ export function useMediaPipe({
       try {
         const { Hands } = await import("@mediapipe/hands");
         const { Camera } = await import("@mediapipe/camera_utils");
+        if (cancelled.value) return;
+
+        await loadGestureModel();
         if (cancelled.value) return;
 
         const hands = new Hands({
