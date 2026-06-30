@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "SignVerse",
-  description: "Breaking communication barriers through AI-powered sign language assistance.",
+  description: "AI-powered sign language assistance.",
 };
 
 export default function RootLayout({
@@ -23,14 +23,14 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const theme = localStorage.getItem('appTheme') || 'colorful';
+                const theme = localStorage.getItem('appTheme') || 'light';
                 document.documentElement.setAttribute('data-theme', theme);
               } catch (e) {}
             `,
           }}
         />
       </head>
-      <body suppressHydrationWarning className={`${inter.className} min-h-screen antialiased selection:bg-purple-500/30`}>
+      <body suppressHydrationWarning className={`${inter.className} min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased`}>
         <BackendStatusProvider>
           <LanguageProvider>
             {children}

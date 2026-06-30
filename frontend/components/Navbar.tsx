@@ -18,31 +18,33 @@ export default function Navbar() {
     { name: t("nav.profile"), href: "/profile", icon: User },
   ];
 
+  // Hidden on welcome, login, permissions screens usually, but we assume page structure handles this.
+  
   return (
     <>
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation (Floating Dock style) */}
       <motion.nav 
         initial={{ y: 100 }}
         animate={{ y: 0 }}
-        className="md:hidden fixed bottom-4 left-4 right-4 z-50 glass-card px-2 py-3 flex justify-between items-center bg-slate-900/80"
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-panel px-3 py-3 flex justify-between items-center rounded-2xl shadow-lg w-[90%] max-w-sm"
       >
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link key={item.name} href={item.href} className="relative flex flex-col items-center justify-center w-14 h-12">
+            <Link key={item.name} href={item.href} className="relative flex flex-col items-center justify-center w-12 h-12">
               <motion.div
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className={`relative z-10 flex flex-col items-center justify-center transition-colors ${isActive ? 'text-white' : 'text-slate-400 hover:text-white'}`}
+                whileTap={{ scale: 0.9 }}
+                className={`relative z-10 flex flex-col items-center justify-center transition-colors ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]'}`}
               >
-                <item.icon size={20} className={isActive ? "text-purple-400" : ""} />
-                <span className="text-[10px] mt-1 font-medium">{item.name}</span>
+                <item.icon size={22} className={isActive ? "text-[var(--accent-blue)]" : ""} />
+                <span className="text-[9px] mt-1 font-medium">{item.name}</span>
               </motion.div>
               {isActive && (
                 <motion.div 
                   layoutId="mobile-active-nav"
-                  className="absolute inset-0 bg-white/10 rounded-xl"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="absolute inset-0 bg-[var(--text-primary)] opacity-[0.04] rounded-xl"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 />
               )}
             </Link>
@@ -50,37 +52,37 @@ export default function Navbar() {
         })}
       </motion.nav>
 
-      {/* Desktop Top/Side Navigation */}
+      {/* Desktop Top/Side Navigation (Sleek Apple/Arc style) */}
       <motion.nav 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className="hidden md:flex fixed top-0 left-0 right-0 z-50 glass px-6 py-4 justify-between items-center bg-slate-900/60"
+        className="hidden md:flex fixed top-0 left-0 right-0 z-50 glass-panel px-8 py-3 justify-between items-center border-b border-[var(--border-subtle)]"
       >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg overflow-hidden shadow-lg shadow-purple-500/20 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 border border-[var(--border-subtle)]">
             <img src="/app-logo-new.png" alt="SignVerse Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="font-bold text-lg text-white">SignVerse</span>
+          <span className="font-semibold text-base text-[var(--text-primary)] tracking-tight">SignVerse</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 bg-[var(--bg-secondary)] p-1 rounded-xl border border-[var(--border-subtle)] shadow-sm">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <Link key={item.name} href={item.href} className="relative px-4 py-2">
+              <Link key={item.name} href={item.href} className="relative px-4 py-1.5 rounded-lg outline-none focus-ring">
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`relative z-10 flex items-center gap-2 transition-colors ${isActive ? 'text-white' : 'text-slate-400 hover:text-white'}`}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  className={`relative z-10 flex items-center gap-2 transition-colors ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                 >
-                  <item.icon size={18} className={isActive ? "text-purple-400" : ""} />
+                  <item.icon size={16} className={isActive ? "text-[var(--accent-blue)]" : ""} />
                   <span className="text-sm font-medium">{item.name}</span>
                 </motion.div>
                 {isActive && (
                   <motion.div 
                     layoutId="desktop-active-nav"
-                    className="absolute inset-0 bg-white/10 rounded-xl border border-white/5"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="absolute inset-0 bg-[var(--bg-elevated)] rounded-lg shadow-sm border border-[var(--border-subtle)]"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
               </Link>

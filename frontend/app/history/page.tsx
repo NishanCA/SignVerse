@@ -47,8 +47,6 @@ export default function HistoryScreen() {
 
   const filteredHistory = history.filter(log => {
     const logDate = new Date(log.date);
-    
-    // Date filtering
     if (filterStartDate) {
       const start = new Date(filterStartDate);
       start.setHours(0, 0, 0, 0);
@@ -59,8 +57,6 @@ export default function HistoryScreen() {
       end.setHours(23, 59, 59, 999);
       if (logDate > end) return false;
     }
-    
-    // Time filtering
     if (filterStartTime) {
       const [hours, minutes] = filterStartTime.split(':').map(Number);
       const logTime = logDate.getHours() * 60 + logDate.getMinutes();
@@ -73,13 +69,12 @@ export default function HistoryScreen() {
       const endTime = hours * 60 + minutes;
       if (logTime > endTime) return false;
     }
-
     return true;
   });
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    show: { opacity: 1, transition: { staggerChildren: 0.05 } }
   };
 
   const itemVariants = {
@@ -88,44 +83,40 @@ export default function HistoryScreen() {
   };
 
   return (
-    <main className="min-h-screen p-6 relative overflow-x-hidden flex flex-col">
-      {/* Background */}
-      <div className="fixed top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] rounded-full bg-blue-900/10 blur-[120px]" />
-      </div>
-
-      <header className="flex items-center mb-8 mt-2 justify-between max-w-6xl mx-auto w-full">
+    <main className="min-h-screen bg-[var(--bg-primary)] px-6 relative overflow-x-hidden flex flex-col pb-24 md:pt-6">
+      
+      <header className="flex items-center mb-6 justify-between max-w-6xl mx-auto w-full pt-4">
         <div className="flex items-center">
           <button 
             onClick={() => router.back()}
-            className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
+            className="p-2 -ml-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors focus-ring"
           >
-            <ChevronLeft size={28} />
+            <ChevronLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold ml-2">Conversation History</h1>
+          <h1 className="text-xl font-semibold ml-2 text-[var(--text-primary)]">Conversation History</h1>
         </div>
         <button 
           onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${showFilters || filterStartDate || filterEndDate || filterStartTime || filterEndTime ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'bg-white/10 hover:bg-white/20 text-slate-300'}`}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors focus-ring outline-none ${showFilters || filterStartDate || filterEndDate || filterStartTime || filterEndTime ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-[var(--bg-secondary)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
         >
-          <Filter size={18} />
+          <Filter size={16} />
           <span className="font-medium text-sm hidden sm:inline">Filters</span>
           {(filterStartDate || filterEndDate || filterStartTime || filterEndTime) && (
-            <span className="w-2 h-2 rounded-full bg-yellow-400 absolute top-2 right-2 sm:relative sm:top-auto sm:right-auto" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-blue)]" />
           )}
         </button>
       </header>
 
-      <div className="flex-1 flex flex-col md:flex-row gap-6 max-w-6xl mx-auto w-full pb-20">
+      <div className="flex-1 flex flex-col md:flex-row gap-6 max-w-6xl mx-auto w-full min-h-[500px]">
         
         {/* Sidebar List */}
-        <div className={`w-full flex flex-col gap-4 ${selectedLog ? 'hidden' : 'flex'}`}>
+        <div className={`w-full md:max-w-md flex flex-col gap-4 ${selectedLog ? 'hidden md:flex' : 'flex'}`}>
           
           {/* Deletion Warning Banner */}
-          <div className="glass-card bg-amber-500/10 border-amber-500/20 p-3 flex items-start gap-3">
-            <Info className="text-amber-400 shrink-0 mt-0.5" size={18} />
-            <p className="text-sm text-slate-300">
-              Chats that are not <Bookmark size={14} className="inline-block text-yellow-400 mx-1" fill="currentColor" /> <strong>Saved</strong> will be automatically deleted after 20 days.
+          <div className="bg-[var(--accent-red)]/5 border border-[var(--accent-red)]/10 rounded-xl p-3 flex items-start gap-3">
+            <Info className="text-[var(--accent-red)]/80 shrink-0 mt-0.5" size={16} />
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              Chats that are not <Bookmark size={12} className="inline-block text-[var(--text-primary)] mx-0.5" /> <strong>Saved</strong> will be automatically deleted after 20 days.
             </p>
           </div>
 
@@ -138,50 +129,50 @@ export default function HistoryScreen() {
                 exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                 className="overflow-hidden"
               >
-                <div className="glass-card p-4 bg-slate-900/50 border-purple-500/30 shadow-inner shadow-purple-500/5 space-y-4">
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className="text-sm font-bold text-purple-300 flex items-center gap-2">
-                      <Filter size={14} /> Filter Timeline
+                <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl p-4 shadow-sm space-y-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+                      Filter Timeline
                     </h3>
                     {(filterStartDate || filterEndDate || filterStartTime || filterEndTime) && (
-                      <button onClick={clearFilters} className="text-xs text-slate-400 hover:text-white flex items-center gap-1">
-                        <X size={12} /> Clear all
+                      <button onClick={clearFilters} className="text-xs font-medium text-[var(--accent-blue)] hover:underline focus-ring outline-none rounded">
+                        Clear all
                       </button>
                     )}
                   </div>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Date Range (Start - End)</label>
+                      <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">Date Range</label>
                       <div className="flex gap-2">
                         <input 
                           type="date" 
                           value={filterStartDate}
                           onChange={e => setFilterStartDate(e.target.value)}
-                          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500" 
+                          className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-md px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-tertiary)]" 
                         />
                         <input 
                           type="date" 
                           value={filterEndDate}
                           onChange={e => setFilterEndDate(e.target.value)}
-                          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500" 
+                          className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-md px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-tertiary)]" 
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs text-slate-400 mb-1 block">Time Range (Start - End)</label>
+                      <label className="text-xs font-medium text-[var(--text-primary)] mb-1.5 block">Time Range</label>
                       <div className="flex gap-2">
                         <input 
                           type="time" 
                           value={filterStartTime}
                           onChange={e => setFilterStartTime(e.target.value)}
-                          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500" 
+                          className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-md px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-tertiary)]" 
                         />
                         <input 
                           type="time" 
                           value={filterEndTime}
                           onChange={e => setFilterEndTime(e.target.value)}
-                          className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-purple-500" 
+                          className="flex-1 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-md px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-tertiary)]" 
                         />
                       </div>
                     </div>
@@ -192,53 +183,56 @@ export default function HistoryScreen() {
           </AnimatePresence>
 
           {filteredHistory.length === 0 ? (
-            <div className="glass-card p-8 text-center flex flex-col items-center justify-center flex-1">
-              <MessageSquare size={48} className="text-slate-600 mb-4" />
-              <p className="text-slate-400 font-medium">{history.length === 0 ? "No conversations done yet." : "No matching conversations."}</p>
+            <div className="border border-dashed border-[var(--border-subtle)] rounded-2xl p-8 text-center flex flex-col items-center justify-center flex-1">
+              <MessageSquare size={32} className="text-[var(--text-tertiary)] mb-3" />
+              <p className="text-sm font-medium text-[var(--text-secondary)]">{history.length === 0 ? "No conversations yet." : "No matching conversations."}</p>
             </div>
           ) : (
-            <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-3">
+            <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-2 overflow-y-auto pr-1 pb-4">
               {filteredHistory.map(log => {
                 const date = new Date(log.date);
+                const isSelected = selectedLog?.id === log.id;
                 return (
-                  <motion.div 
+                  <motion.button 
                     key={log.id}
                     variants={itemVariants}
                     onClick={() => setSelectedLog(log)}
-                    className={`glass-card p-4 cursor-pointer transition-all ${selectedLog?.id === log.id ? 'ring-2 ring-purple-500 bg-white/10' : 'hover:bg-white/5'}`}
+                    className={`w-full text-left p-4 rounded-xl border transition-colors outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[var(--accent-blue)] ${isSelected ? 'bg-[var(--bg-elevated)] border-[var(--border-strong)] shadow-sm' : 'bg-[var(--bg-primary)] border-transparent hover:bg-[var(--bg-secondary)]'}`}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                        <CalendarIcon size={14} className="text-purple-400" />
+                    <div className="flex justify-between items-start mb-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)]">
                         {date.toLocaleDateString()}
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button 
+                      <div className="flex items-center gap-1">
+                        <div 
                           onClick={(e) => handleToggleSave(log.id, e)}
-                          className={`p-1.5 rounded-full transition-colors ${log.isSaved ? 'text-yellow-400 bg-yellow-400/10' : 'text-slate-500 hover:text-yellow-400 hover:bg-white/10'}`}
+                          className={`p-1.5 rounded-md transition-colors hover:bg-[var(--bg-tertiary)] ${log.isSaved ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]'}`}
+                          role="button"
+                          tabIndex={0}
                         >
-                          <Bookmark size={16} fill={log.isSaved ? "currentColor" : "none"} />
-                        </button>
-                        <button 
+                          <Bookmark size={14} fill={log.isSaved ? "currentColor" : "none"} />
+                        </div>
+                        <div 
                           onClick={(e) => handleDelete(log.id, e)}
-                          className="p-1.5 rounded-full text-slate-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                          className="p-1.5 rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent-red)] hover:bg-[var(--accent-red)]/10 transition-colors"
+                          role="button"
+                          tabIndex={0}
                         >
-                          <Trash2 size={16} />
-                        </button>
+                          <Trash2 size={14} />
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-400 mb-3">
-                      <Clock size={12} />
+                    <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-secondary)] mb-2">
+                      <Clock size={10} />
                       {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
-                    <p className="text-sm text-slate-200 line-clamp-2 italic">
-                      "{log.messages[0]?.text || 'No text'}"
+                    <p className="text-sm text-[var(--text-secondary)] line-clamp-2 leading-snug">
+                      {log.messages[0]?.text || 'No text'}
                     </p>
-                    <div className="mt-2 flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{log.messages.length} messages</span>
-                      {log.isSaved && <span className="text-[10px] font-bold text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded">SAVED</span>}
+                    <div className="mt-3 flex justify-between items-center">
+                      <span className="text-[10px] font-semibold text-[var(--text-tertiary)]">{log.messages.length} messages</span>
                     </div>
-                  </motion.div>
+                  </motion.button>
                 );
               })}
             </motion.div>
@@ -246,36 +240,35 @@ export default function HistoryScreen() {
         </div>
 
         {/* Detail View */}
-        <div className={`w-full glass-card flex-col ${selectedLog ? 'flex' : 'hidden'}`}>
+        <div className={`w-full md:flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl flex-col shadow-sm overflow-hidden ${selectedLog ? 'flex' : 'hidden md:flex'}`}>
           {selectedLog ? (
             <>
-              <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/20 rounded-t-2xl">
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setSelectedLog(null)} className="p-2 -ml-2 rounded-full hover:bg-white/10 flex items-center gap-1 text-sm font-medium text-purple-300">
-                    <ChevronLeft size={20} /> Back to List
+              <div className="p-4 border-b border-[var(--border-subtle)] flex justify-between items-center bg-[var(--bg-secondary)]">
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setSelectedLog(null)} className="md:hidden p-1.5 -ml-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors">
+                    <ChevronLeft size={20} />
                   </button>
-                  <h2 className="font-bold ml-2">Conversation Log</h2>
+                  <h2 className="font-semibold text-sm text-[var(--text-primary)]">Conversation Log</h2>
                 </div>
-                <div className="text-xs text-slate-400 font-medium">
+                <div className="text-xs font-medium text-[var(--text-secondary)]">
                   {new Date(selectedLog.date).toLocaleString()}
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[70vh]">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[75vh]">
                 {selectedLog.messages.map(msg => (
                   <div key={msg.id} className={`flex flex-col max-w-[85%] ${msg.sender === "user" ? "ml-auto items-end" : "mr-auto items-start"}`}>
-                    <div className={`p-3 rounded-2xl text-sm ${msg.sender === "user" ? "bg-purple-600 text-white rounded-br-sm" : "bg-slate-800 text-slate-200 rounded-bl-sm border border-white/5"}`}>
+                    <div className={`p-3 rounded-2xl text-sm leading-relaxed ${msg.sender === "user" ? "bg-[var(--text-primary)] text-[var(--bg-primary)] rounded-br-sm" : "bg-[var(--bg-secondary)] text-[var(--text-primary)] rounded-bl-sm border border-[var(--border-subtle)]"}`}>
                       <p>{msg.text}</p>
-                      {msg.translation && <p className="text-xs mt-1 pt-1 border-t border-white/10 opacity-80">{msg.translation}</p>}
-
+                      {msg.translation && <p className={`text-xs mt-2 pt-2 border-t opacity-80 ${msg.sender === "user" ? "border-[var(--bg-primary)]/20" : "border-[var(--border-subtle)]"}`}>{msg.translation}</p>}
                     </div>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-500">
-              <MessageSquare size={48} className="mb-4 opacity-50" />
-              <p>Select a conversation from the list to view its details.</p>
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-[var(--text-secondary)]">
+              <MessageSquare size={32} className="mb-3 text-[var(--text-tertiary)]" />
+              <p className="text-sm font-medium">Select a conversation to view details</p>
             </div>
           )}
         </div>

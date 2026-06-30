@@ -67,7 +67,6 @@ export default function ProfileScreen() {
             setIsNewUser(!data.profileComplete);
             if (!data.profileComplete) setIsEditing(true);
           } else {
-            // Brand new user
             setFormData({
               ...defaultProfile,
               fullName: user.displayName || "",
@@ -83,7 +82,6 @@ export default function ProfileScreen() {
           setIsEditing(true);
         }
       } else {
-        // Not logged in
         setIsNewUser(true);
         setIsEditing(true);
       }
@@ -166,9 +164,7 @@ export default function ProfileScreen() {
     if (!userId || !auth.currentUser) return;
     setLoading(true);
     try {
-      // Delete user data from firestore
       await deleteDoc(doc(db, "users", userId));
-      // Delete auth account
       await deleteUser(auth.currentUser);
       router.push("/");
     } catch (err: any) {
@@ -180,261 +176,261 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      <main className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[var(--text-secondary)] border-t-transparent rounded-full animate-spin" />
       </main>
     );
   }
 
-  const inputClass = "w-full p-3 rounded-lg bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed";
-  const selectClass = "w-full p-3 rounded-lg bg-white/5 border border-white/10 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white transition-all appearance-none [&>option]:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed";
+  const inputClass = "w-full p-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] focus:border-[var(--text-tertiary)] focus:ring-1 focus:ring-[var(--text-tertiary)] outline-none text-[var(--text-primary)] text-sm transition-all disabled:opacity-60 disabled:bg-[var(--bg-primary)] disabled:cursor-not-allowed";
+  const selectClass = "w-full p-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] focus:border-[var(--text-tertiary)] focus:ring-1 focus:ring-[var(--text-tertiary)] outline-none text-[var(--text-primary)] text-sm transition-all appearance-none disabled:opacity-60 disabled:bg-[var(--bg-primary)] disabled:cursor-not-allowed";
 
   return (
-    <main className="min-h-screen p-6 pb-24 md:pt-24 relative overflow-x-hidden">
+    <main className="min-h-screen bg-[var(--bg-primary)] pb-24 md:pt-6 px-6">
       {!isNewUser && <Navbar />}
 
-      {/* Background decoration */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-        <div className="absolute top-[10%] -right-[10%] w-[60%] h-[60%] rounded-full bg-purple-600/10 blur-[100px]" />
-        <div className="absolute bottom-[10%] -left-[10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[100px]" />
-      </div>
-
-      <div className="max-w-xl mx-auto">
+      <div className="max-w-2xl mx-auto pt-6">
         {/* Header */}
         {isNewUser ? (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
+            className="text-center mb-10"
           >
-            <h1 className="text-3xl font-bold mb-2 text-gradient">{t("profile.complete")}</h1>
-            <p className="text-slate-400">{t("profile.tellUs")}</p>
+            <h1 className="heading-xl text-[var(--text-primary)] mb-2">{t("profile.complete") || "Complete Profile"}</h1>
+            <p className="body-sm text-[var(--text-secondary)]">{t("profile.tellUs") || "Tell us a bit about yourself"}</p>
           </motion.div>
         ) : (
-          <header className="flex items-center justify-between mb-8 mt-2">
+          <header className="flex items-center justify-between mb-8">
             <div className="flex items-center">
               <button 
                 onClick={() => router.back()}
-                className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors"
+                className="p-2 -ml-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors focus-ring"
               >
-                <ChevronLeft size={28} />
+                <ChevronLeft size={24} />
               </button>
-              <h1 className="text-2xl font-bold ml-2">{t("profile.title")}</h1>
+              <h1 className="text-2xl font-semibold ml-2 text-[var(--text-primary)]">{t("profile.title") || "Profile"}</h1>
             </div>
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600/20 text-purple-300 hover:bg-purple-600/30 transition-colors text-sm font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors text-sm font-medium border border-[var(--border-subtle)] outline-none focus-ring"
               >
-                <Edit3 size={16} /> {t("profile.edit")}
+                <Edit3 size={14} /> {t("profile.edit") || "Edit"}
               </button>
             )}
           </header>
         )}
 
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"
         >
           {/* Profile Photo */}
-          <div className="flex flex-col items-center mb-6">
+          <div className="flex flex-col items-center mb-8">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-white/10 border-2 border-white/20 flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-[var(--bg-secondary)] border border-[var(--border-subtle)] flex items-center justify-center shadow-sm">
                 {formData.profilePhoto ? (
                   <img src={formData.profilePhoto} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <User size={40} className="text-slate-500" />
+                  <User size={36} className="text-[var(--text-tertiary)]" />
                 )}
               </div>
               {isEditing && (
-                <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center cursor-pointer hover:bg-purple-500 transition-colors shadow-lg">
-                  <Camera size={14} className="text-white" />
+                <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[var(--text-primary)] border-2 border-[var(--bg-primary)] flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shadow-sm focus-ring">
+                  <Camera size={14} className="text-[var(--bg-primary)]" />
                   <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                 </label>
               )}
             </div>
             {formData.email && (
-              <p className="text-xs text-slate-500 mt-2">{formData.email}</p>
+              <p className="text-xs font-medium text-[var(--text-secondary)] mt-3">{formData.email}</p>
             )}
           </div>
 
           <AnimatePresence>
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm text-center"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-3 bg-[var(--accent-red)]/10 border border-[var(--accent-red)]/20 rounded-xl text-[var(--accent-red)] text-xs text-center font-medium"
               >
                 {error}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Personal Information */}
-          <section className="glass-card p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-purple-400">
-              <User size={20} /> {t("profile.personal")}
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">{t("profile.fullName")}</label>
-                <input
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className={inputClass}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+          {/* Form Sections */}
+          <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-3xl overflow-hidden shadow-sm">
+            
+            {/* Personal Information */}
+            <div className="p-5 sm:p-6 border-b border-[var(--border-subtle)]">
+              <h2 className="text-sm font-semibold mb-5 flex items-center gap-2 text-[var(--text-primary)] uppercase tracking-wider">
+                <User size={16} className="text-[var(--text-secondary)]" /> {t("profile.personal") || "Personal Information"}
+              </h2>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">{t("profile.age")}</label>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">{t("profile.fullName") || "Full Name"}</label>
                   <input
-                    type="number"
-                    name="age"
-                    value={formData.age}
+                    name="fullName"
+                    value={formData.fullName}
                     onChange={handleChange}
                     disabled={!isEditing}
                     className={inputClass}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">{t("profile.age") || "Age"}</label>
+                    <input
+                      type="number"
+                      name="age"
+                      value={formData.age}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5 flex items-center gap-1">
+                       {t("profile.country") || "Country"}
+                    </label>
+                    <input
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1 flex items-center gap-1">
-                    <MapPin size={14} /> {t("profile.country")}
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5 flex items-center gap-1">
+                    {t("profile.phone") || "Phone Number"}
                   </label>
                   <input
-                    name="country"
-                    value={formData.country}
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
                     onChange={handleChange}
                     disabled={!isEditing}
                     className={inputClass}
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1 flex items-center gap-1">
-                  <Phone size={14} /> {t("profile.phone")}
-                </label>
-                <input
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className={inputClass}
-                />
-              </div>
             </div>
-          </section>
 
-          {/* Health Information */}
-          <section className="glass-card p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-emerald-400">
-              <Heart size={20} /> {t("profile.health")}
-            </h2>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1 flex items-center gap-1">
-                    <Ruler size={14} /> {t("profile.height")}
-                  </label>
-                  <input
-                    type="number"
-                    name="height"
-                    value={formData.height}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className={inputClass}
-                  />
+            {/* Health Information */}
+            <div className="p-5 sm:p-6 border-b border-[var(--border-subtle)]">
+              <h2 className="text-sm font-semibold mb-5 flex items-center gap-2 text-[var(--text-primary)] uppercase tracking-wider">
+                <Heart size={16} className="text-[var(--accent-red)]" /> {t("profile.health") || "Health Information"}
+              </h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5 flex items-center gap-1">
+                      {t("profile.height") || "Height (cm)"}
+                    </label>
+                    <input
+                      type="number"
+                      name="height"
+                      value={formData.height}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5 flex items-center gap-1">
+                       {t("profile.weight") || "Weight (kg)"}
+                    </label>
+                    <input
+                      type="number"
+                      name="weight"
+                      value={formData.weight}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={inputClass}
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1 flex items-center gap-1">
-                    <Weight size={14} /> {t("profile.weight")}
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5 flex items-center gap-1">
+                    {t("profile.disability") || "Disability Type"}
                   </label>
-                  <input
-                    type="number"
-                    name="weight"
-                    value={formData.weight}
-                    onChange={handleChange}
-                    disabled={!isEditing}
-                    className={inputClass}
-                  />
+                  <div className="relative">
+                    <select
+                      name="disabilityType"
+                      value={formData.disabilityType}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className={selectClass}
+                    >
+                      {disabilityOptions.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1 flex items-center gap-1">
-                  <AlertCircle size={14} /> {t("profile.disability")}
-                </label>
-                <select
-                  name="disabilityType"
-                  value={formData.disabilityType}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className={selectClass}
-                >
-                  {disabilityOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
               </div>
             </div>
-          </section>
 
-          {/* Emergency Contact */}
-          <section className="glass-card p-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-orange-400">
-              <Phone size={20} /> {t("profile.emergency")}
-              <span className="text-xs text-slate-500 font-normal">{t("profile.optional")}</span>
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">{t("profile.contactName")}</label>
-                <input
-                  name="emergencyContactName"
-                  value={formData.emergencyContactName}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1">{t("profile.contactNumber")}</label>
-                <input
-                  name="emergencyContactNumber"
-                  value={formData.emergencyContactNumber}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  className={inputClass}
-                />
+            {/* Emergency Contact */}
+            <div className="p-5 sm:p-6">
+              <h2 className="text-sm font-semibold mb-5 flex items-center gap-2 text-[var(--text-primary)] uppercase tracking-wider">
+                <Phone size={16} className="text-[var(--accent-green)]" /> {t("profile.emergency") || "Emergency Contact"}
+                <span className="text-[10px] text-[var(--text-tertiary)] font-normal normal-case ml-1">({t("profile.optional") || "Optional"})</span>
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">{t("profile.contactName") || "Contact Name"}</label>
+                  <input
+                    name="emergencyContactName"
+                    value={formData.emergencyContactName}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">{t("profile.contactNumber") || "Contact Number"}</label>
+                  <input
+                    name="emergencyContactNumber"
+                    value={formData.emergencyContactNumber}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    className={inputClass}
+                  />
+                </div>
               </div>
             </div>
-          </section>
+          </div>
 
           {/* Action Buttons */}
           {isEditing && (
-            <div className="flex gap-4">
+            <div className="flex gap-3 pt-4">
               {!isNewUser && (
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 py-3 rounded-xl bg-white/5 text-white font-medium border border-white/10 hover:bg-white/10 transition-all"
+                  className="flex-1 py-3 rounded-xl bg-[var(--bg-secondary)] text-[var(--text-primary)] font-medium border border-[var(--border-subtle)] hover:bg-[var(--bg-tertiary)] transition-colors focus-ring"
                 >
-                  {t("profile.cancel")}
+                  {t("profile.cancel") || "Cancel"}
                 </button>
               )}
               <motion.button
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-3 rounded-xl bg-gradient-primary text-white font-bold flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all disabled:opacity-50"
+                className="flex-1 py-3 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] font-semibold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50 focus-ring"
               >
                 {saving ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-[var(--bg-primary)] border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <Save size={18} />
-                    {isNewUser ? t("profile.saveCont") : t("profile.save")}
+                    <Save size={16} />
+                    {isNewUser ? (t("profile.saveCont") || "Save & Continue") : (t("profile.save") || "Save Changes")}
                   </>
                 )}
               </motion.button>
@@ -443,24 +439,22 @@ export default function ProfileScreen() {
 
           {/* Account Management */}
           {!isNewUser && !isEditing && (
-            <section className="glass-card p-6 mt-8 border-t border-white/5">
-              <div className="flex flex-col gap-4">
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white font-medium transition-all"
-                >
-                  <LogOut size={18} />
-                  {t("profile.logout")}
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 font-medium transition-all"
-                >
-                  <Trash2 size={18} />
-                  {t("profile.delete")}
-                </button>
-              </div>
-            </section>
+            <div className="flex flex-col gap-3 mt-8">
+              <button
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--bg-secondary)] text-[var(--text-primary)] font-medium transition-colors shadow-sm focus-ring"
+              >
+                <LogOut size={16} />
+                {t("profile.logout") || "Log Out"}
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:bg-[var(--accent-red)]/10 text-[var(--accent-red)] font-medium transition-colors shadow-sm focus-ring"
+              >
+                <Trash2 size={16} />
+                {t("profile.delete") || "Delete Account"}
+              </button>
+            </div>
           )}
 
         </motion.div>
@@ -473,33 +467,33 @@ export default function ProfileScreen() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           >
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="glass-card max-w-sm w-full p-6 border-red-500/20"
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-xl max-w-sm w-full p-6 rounded-3xl flex flex-col items-center"
             >
-              <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-red-500 mb-4 mx-auto">
+              <div className="w-12 h-12 rounded-full bg-[var(--accent-red)]/10 flex items-center justify-center text-[var(--accent-red)] mb-4">
                 <AlertCircle size={24} />
               </div>
-              <h3 className="text-xl font-bold text-center mb-2">{t("profile.delete")}</h3>
-              <p className="text-slate-300 text-center text-sm mb-6">
-                {t("profile.delConfirm")}
+              <h3 className="text-lg font-bold text-center mb-2 text-[var(--text-primary)]">{t("profile.delete") || "Delete Account"}</h3>
+              <p className="text-[var(--text-secondary)] text-center text-sm mb-6 leading-relaxed">
+                {t("profile.delConfirm") || "Are you sure you want to delete your account? This action cannot be undone."}
               </p>
-              <div className="flex gap-3">
+              <div className="flex w-full gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 py-2.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium"
+                  className="flex-1 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors text-sm font-medium focus-ring"
                 >
-                  {t("profile.cancel")}
+                  {t("profile.cancel") || "Cancel"}
                 </button>
                 <button
                   onClick={handleDeleteAccount}
-                  className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 transition-colors text-white text-sm font-medium"
+                  className="flex-1 py-2.5 rounded-xl bg-[var(--accent-red)] text-white hover:bg-red-600 transition-colors text-sm font-medium focus-ring shadow-sm"
                 >
-                  {t("profile.yesDel")}
+                  {t("profile.yesDel") || "Yes, Delete"}
                 </button>
               </div>
             </motion.div>

@@ -8,8 +8,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useLanguage } from "../context/LanguageContext";
-
-const floatingEmojis = ["🤟", "👋", "🙌", "👍", "✌️", "🤌", "👐", "🤝", "👏", "🖐️", "👇", "👊", "🤚", "🤞", "🤘", "🫶"];
+import { Sparkles, ArrowRight } from "lucide-react";
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -40,119 +39,78 @@ export default function WelcomeScreen() {
     return () => unsubscribe();
   }, [router]);
 
+  if (!mounted) return null;
+
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6">
+    <main className="min-h-screen flex flex-col relative overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      {/* Subtle ambient light at top corner */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[var(--accent-blue)] opacity-[0.03] blur-[100px] rounded-full pointer-events-none" />
       
-      {/* Ambient background layers */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-purple-700/20 blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-blue-700/20 blur-[120px]" />
-        <div className="absolute top-[40%] left-[50%] -translate-x-1/2 w-[300px] h-[300px] rounded-full bg-indigo-600/10 blur-[80px]" />
-        {/* Grid */}
-        <div 
-          className="absolute inset-0 opacity-[0.03]"
-          style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }}
-        />
-      </div>
-
-      {/* Floating emojis in background */}
-      {mounted && floatingEmojis.map((emoji, i) => (
+      <div className="flex-1 flex flex-col items-center justify-center px-6 z-10 w-full max-w-lg mx-auto">
         <motion.div
-          key={i}
-          className="absolute text-5xl font-black brightness-0 invert opacity-10 select-none pointer-events-none"
-          style={{
-            left: `${5 + (i * 6)}%`,
-            top: `${10 + (i % 4) * 22}%`,
-          }}
-          animate={{
-            y: [0, -20, 0],
-            rotate: [-5, 5, -5],
-          }}
-          transition={{
-            duration: 4 + (i % 5) * 0.7,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: (i % 3) * 0.4,
-          }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full"
         >
-          {emoji}
-        </motion.div>
-      ))}
-
-      {/* Main content */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="flex flex-col items-center text-center max-w-sm w-full z-10"
-      >
-        {/* Logo mark */}
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.1, type: "spring", stiffness: 200 }}
-          className="mb-8"
-        >
-          <div className="relative w-24 h-24 mx-auto mb-6">
-            {/* Outer glow ring */}
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-purple-500 to-blue-600 blur-xl opacity-50 animate-pulse" />
-            {/* Icon body */}
-            <div className="relative w-full h-full rounded-3xl overflow-hidden flex items-center justify-center border border-white/20 shadow-2xl">
-              <img src="/app-logo-new.png" alt="SignVerse Logo" className="w-full h-full object-cover" />
-            </div>
+          {/* Elegant Logo / Mark */}
+          <div className="flex justify-center mb-12">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-sm border border-[var(--border-subtle)] bg-[var(--bg-elevated)] flex items-center justify-center p-2"
+            >
+              <img src="/app-logo-new.png" alt="SignVerse Logo" className="w-full h-full object-cover rounded-xl" />
+            </motion.div>
           </div>
 
-          <h1 className="text-5xl font-black tracking-tight mb-1">
-            <span className="text-gradient">Sign</span>
-            <span className="text-white">Verse</span>
-          </h1>
+          {/* Typography */}
+          <div className="text-center mb-12">
+            <h1 className="heading-xl mb-4 font-semibold">
+              SignVerse
+            </h1>
+            <p className="body-base text-[var(--text-secondary)] max-w-sm mx-auto">
+              Breaking communication barriers with real-time sign language assistance.
+            </p>
+          </div>
+
+          {/* Feature List (Sleek Apple/Linear style) */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="flex flex-col gap-3 mb-12"
+          >
+            {[
+              { icon: "🤟", label: "Gesture to Speech" },
+              { icon: "🎙️", label: "Speech to Sign" },
+              { icon: "🤖", label: "Real-time Avatar" }
+            ].map((feat, i) => (
+              <div key={i} className="flex items-center gap-4 p-3 rounded-xl surface-secondary border border-[var(--border-subtle)]">
+                <div className="w-10 h-10 rounded-lg surface-elevated flex items-center justify-center shadow-sm border border-[var(--border-subtle)] text-lg">
+                  {feat.icon}
+                </div>
+                <span className="font-medium text-[var(--text-primary)]">{feat.label}</span>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* Call to action */}
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => router.push("/language")}
+            className="w-full py-3.5 px-4 rounded-xl bg-[var(--text-primary)] text-[var(--bg-primary)] font-medium text-base flex items-center justify-center gap-2 shadow-sm transition-transform"
+          >
+            <span>Get Started</span>
+            <ArrowRight size={18} className="opacity-70" />
+          </motion.button>
         </motion.div>
-
-
-
-        {/* Feature pills */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="flex flex-wrap gap-2 justify-center mb-10"
-        >
-          {["🤟 Gesture to Speech", "🎙️ Speech to Sign", "🌐 Multi-language", "🤖 Avatar"].map((feat, i) => (
-            <motion.span
-              key={feat}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.7 + i * 0.1 }}
-              className="px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-slate-300 font-medium"
-            >
-              {feat}
-            </motion.span>
-          ))}
-        </motion.div>
-
-        {/* CTA Button */}
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => router.push("/language")}
-          className="w-full py-4 rounded-2xl font-bold text-lg text-white bg-gradient-primary shadow-[0_0_30px_rgba(124,58,237,0.5)] hover:shadow-[0_0_50px_rgba(124,58,237,0.7)] transition-all duration-300 relative overflow-hidden group"
-        >
-          <span className="relative z-10">Get Started</span>
-          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-        </motion.button>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="mt-6 text-slate-600 text-xs"
-        >
-          Designed for the deaf & non-verbal community
-        </motion.p>
-      </motion.div>
+      </div>
     </main>
   );
 }

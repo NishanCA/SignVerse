@@ -2,7 +2,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronLeft, Mic, SwitchCamera } from "lucide-react";
+import { ChevronLeft, SwitchCamera } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 
@@ -175,59 +175,57 @@ export default function ConversationScreen() {
   // ── Backend status badge ──────────────────────────────────────────────────
   const bbg =
     backendStatus === "online"
-      ? "bg-green-500/20 border-green-500/50 text-green-100"
+      ? "bg-[var(--accent-green)]/10 border-[var(--accent-green)]/20 text-[var(--accent-green)]"
       : backendStatus === "offline"
-      ? "bg-red-500/20 border-red-500/50 text-red-200"
-      : "bg-yellow-500/20 border-yellow-500/50 text-yellow-100";
+      ? "bg-[var(--accent-red)]/10 border-[var(--accent-red)]/20 text-[var(--accent-red)]"
+      : "bg-[var(--text-tertiary)]/10 border-[var(--border-subtle)] text-[var(--text-tertiary)]";
+  
   const bdot =
     backendStatus === "online"
-      ? "bg-green-400"
+      ? "bg-[var(--accent-green)]"
       : backendStatus === "offline"
-      ? "bg-red-400 animate-pulse"
-      : "bg-yellow-400 animate-pulse";
+      ? "bg-[var(--accent-red)] animate-pulse"
+      : "bg-[var(--text-tertiary)] animate-pulse";
+      
   const blabel =
     backendStatus === "online"
-      ? "Backend Online"
+      ? "Online"
       : backendStatus === "offline"
-      ? "Backend Offline"
-      : "Waking up server (20-60s)";
-
-  const micStatusLabel =
-    micStatus === "listening"
-      ? t("conv.listening")
-      : micStatus === "processing"
-      ? t("conv.processing")
-      : "";
+      ? "Offline"
+      : "Connecting...";
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <main className="h-screen flex flex-col bg-slate-950 overflow-hidden">
+    <main className="h-screen flex flex-col bg-[var(--bg-primary)] overflow-hidden">
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="absolute top-0 left-0 w-full p-4 z-50 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
+      <header className="absolute top-0 left-0 w-full px-4 pt-4 pb-12 z-50 flex justify-between items-start bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
         <button
           onClick={() => router.push("/home")}
-          className="px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition-colors flex items-center gap-1"
+          className="p-2.5 rounded-2xl bg-black/40 backdrop-blur-md text-white/90 hover:bg-black/60 hover:text-white transition-colors border border-white/10 shadow-sm pointer-events-auto outline-none focus-ring"
         >
-          <ChevronLeft size={20} />
-          <span className="text-sm font-medium pr-1">Back</span>
+          <ChevronLeft size={24} />
         </button>
 
-        <div className="flex gap-2 items-center flex-wrap justify-end">
+        <div className="flex gap-2 items-center pointer-events-auto">
           {/* Backend status */}
-          <div className={`px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center gap-2 ${bbg}`}>
-            <span className={`w-2 h-2 rounded-full ${bdot}`} />
+          <div className={`px-3 py-1.5 rounded-full border text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 backdrop-blur-md shadow-sm ${bbg}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${bdot}`} />
             {blabel}
           </div>
 
-          <button onClick={toggleCamera} className="p-2 rounded-full bg-black/40 backdrop-blur-md text-white hover:bg-black/60 transition-colors">
-            <SwitchCamera size={20} />
+          <button 
+            onClick={toggleCamera} 
+            className="p-2.5 rounded-xl bg-black/40 backdrop-blur-md text-white/90 hover:bg-black/60 hover:text-white transition-colors border border-white/10 shadow-sm outline-none focus-ring"
+            title="Switch Camera"
+          >
+            <SwitchCamera size={18} />
           </button>
         </div>
       </header>
 
       {/* ── Camera + Avatar ──────────────────────────────────────────────── */}
-      <div className="flex-1 min-h-0 relative flex p-3 gap-3">
+      <div className="flex-1 min-h-0 relative flex p-2 sm:p-4 gap-2 sm:gap-4 bg-[var(--bg-primary)]">
         <ConversationCamera
           videoRef={videoRef}
           canvasRef={canvasRef}

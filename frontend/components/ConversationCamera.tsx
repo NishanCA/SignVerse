@@ -30,104 +30,127 @@ export default function ConversationCamera({
   const { t } = useLanguage();
 
   return (
-    <div className="flex-1 relative bg-black overflow-hidden rounded-2xl border border-white/10">
+    <div className="flex-1 relative bg-black overflow-hidden rounded-3xl border border-[var(--border-subtle)] shadow-sm">
       {/* Live camera feed */}
       <video
         ref={videoRef}
         autoPlay
         playsInline
         muted
-        className="absolute inset-0 w-full h-full object-cover scale-x-[-1] rounded-2xl"
+        className="absolute inset-0 w-full h-full object-cover scale-x-[-1] rounded-3xl"
       />
 
       {/* Speaking blur overlay */}
       <div
-        className={`absolute inset-0 w-full h-full rounded-2xl transition-all duration-300 pointer-events-none ${
-          isSpeaking && !handsVisible ? "backdrop-blur-md bg-black/30" : ""
+        className={`absolute inset-0 w-full h-full rounded-3xl transition-all duration-500 pointer-events-none ${
+          isSpeaking && !handsVisible ? "backdrop-blur-xl bg-black/40" : ""
         }`}
       />
 
       {/* Landmark canvas */}
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full object-cover scale-x-[-1] pointer-events-none rounded-2xl"
+        className="absolute inset-0 w-full h-full object-cover scale-x-[-1] pointer-events-none rounded-3xl"
       />
 
       {/* Visual-only webcam hide overlay */}
-      {!webcamVisible && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md rounded-2xl">
-          <Video className="w-16 h-16 text-slate-500 mb-4 opacity-50" />
-        </div>
-      )}
+      <AnimatePresence>
+        {!webcamVisible && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[var(--bg-primary)]/90 backdrop-blur-md rounded-3xl"
+          >
+            <Video className="w-12 h-12 text-[var(--text-tertiary)] mb-4" strokeWidth={1.5} />
+            <p className="text-sm font-medium text-[var(--text-secondary)]">Camera is off</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Speaking / Listening overlay */}
-      {webcamVisible && isSpeaking && !handsVisible && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 bg-black/30 backdrop-blur-sm">
-          <Mic className="text-cyan-400 animate-pulse w-12 h-12 mb-4" />
-          <span className="text-cyan-300 font-bold text-xl tracking-widest animate-pulse">
-            {t("conv.listening")}
-          </span>
-        </div>
-      )}
+      <AnimatePresence>
+        {webcamVisible && isSpeaking && !handsVisible && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="absolute inset-0 flex flex-col items-center justify-center z-20"
+          >
+            <div className="w-24 h-24 rounded-full bg-[var(--accent-blue)]/20 flex items-center justify-center mb-6 relative">
+              <div className="absolute inset-0 rounded-full border-2 border-[var(--accent-blue)]/30 animate-ping" />
+              <div className="w-16 h-16 rounded-full bg-[var(--accent-blue)]/40 flex items-center justify-center backdrop-blur-md border border-[var(--accent-blue)]/50">
+                <Mic className="text-[var(--bg-primary)]" size={32} />
+              </div>
+            </div>
+            <span className="text-[var(--text-primary)] font-semibold text-xl tracking-tight drop-shadow-md">
+              {t("conv.listening") || "Listening..."}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hand-type hint labels */}
       {webcamVisible && (
-        <div className="absolute top-16 left-4 flex flex-col gap-2 z-10">
-          <div className="px-3 py-1 rounded-lg bg-black/60 backdrop-blur-sm text-xs text-purple-300 border border-purple-500/30">
-            ✋ Letters → Right Hand
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 pointer-events-none">
+          <div className="px-3 py-1.5 rounded-lg bg-black/40 backdrop-blur-md text-[11px] font-medium text-white/90 border border-white/10 shadow-sm">
+            <span className="mr-1.5 opacity-80">✋</span> Letters → Right Hand
           </div>
-          <div className="px-3 py-1 rounded-lg bg-black/60 backdrop-blur-sm text-xs text-cyan-300 border border-cyan-500/30">
-            🤚 Numbers → Left Hand
+          <div className="px-3 py-1.5 rounded-lg bg-black/40 backdrop-blur-md text-[11px] font-medium text-white/90 border border-white/10 shadow-sm">
+            <span className="mr-1.5 opacity-80">🤚</span> Numbers → Left Hand
           </div>
         </div>
       )}
 
       {/* Gesture detected / status badge */}
       {webcamVisible && (
-        <div className="absolute bottom-4 left-4 right-4 text-center z-10">
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center z-10 pointer-events-none">
           <AnimatePresence mode="wait">
             {currentGesture ? (
               <motion.div
                 key={`${currentGesture}-${currentHand}`}
-                initial={{ opacity: 0, scale: 0.8, y: 8 }}
+                initial={{ opacity: 0, scale: 0.9, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8, y: -8 }}
-                className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-black/80 backdrop-blur-md text-white border ${
-                  currentHand === "Right" ? "border-purple-500/50" : "border-cyan-500/50"
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                className={`inline-flex items-center gap-3 px-5 py-3 rounded-2xl bg-black/50 backdrop-blur-xl text-white border shadow-lg ${
+                  currentHand === "Right" ? "border-purple-500/30" : "border-blue-500/30"
                 }`}
               >
-                <Volume2
-                  size={16}
-                  className={currentHand === "Right" ? "text-purple-400" : "text-cyan-400"}
-                />
-                <span className="text-sm opacity-70">
-                  {currentGesture && currentGesture.length > 1
-                    ? "Suggestion"
-                    : currentHand === "Right"
-                    ? "Letter"
-                    : "Number"}
-                  :
-                </span>
-                <strong
-                  className={`text-2xl font-bold tracking-wider ${
-                    currentHand === "Right" ? "text-purple-300" : "text-cyan-300"
-                  }`}
-                >
-                  {currentGesture}
-                </strong>
+                <div className={`p-1.5 rounded-full ${currentHand === "Right" ? "bg-purple-500/20 text-purple-300" : "bg-blue-500/20 text-blue-300"}`}>
+                  <Volume2 size={16} />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xs font-medium opacity-70 uppercase tracking-wider">
+                    {currentGesture && currentGesture.length > 1
+                      ? "Suggestion"
+                      : currentHand === "Right"
+                      ? "Letter"
+                      : "Number"}
+                  </span>
+                  <strong className={`text-xl font-bold tracking-tight ${
+                    currentHand === "Right" ? "text-purple-200" : "text-blue-200"
+                  }`}>
+                    {currentGesture}
+                  </strong>
+                </div>
               </motion.div>
             ) : (
               <motion.div
                 key="idle"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="inline-block px-4 py-2 rounded-xl bg-black/40 backdrop-blur-md text-slate-400 text-xs border border-white/10"
+                className="inline-flex items-center px-4 py-2 rounded-xl bg-black/40 backdrop-blur-md text-white/70 text-xs font-medium border border-white/10 shadow-sm"
               >
                 {handsVisible
-                  ? t("conv.reading")
+                  ? (t("conv.reading") || "Reading hands...")
                   : micStatus === "listening"
-                  ? `🎤 ${t("conv.listening")}`
-                  : t("conv.idle")}
+                  ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-blue)] animate-pulse" />
+                      {t("conv.listening") || "Listening"}
+                    </span>
+                  )
+                  : (t("conv.idle") || "Ready")}
               </motion.div>
             )}
           </AnimatePresence>

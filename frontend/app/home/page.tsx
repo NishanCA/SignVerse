@@ -2,7 +2,7 @@
 
 import { motion, Variants } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { MessageSquare, BookOpen, Settings, ChevronRight, Award, Flame, History } from "lucide-react";
+import { MessageSquare, BookOpen, Settings, ChevronRight, Award, Flame, History, Play } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import { useLanguage } from "../../context/LanguageContext";
 import { userService, UserStats } from "../../lib/userService";
@@ -26,13 +26,12 @@ export default function HomeScreen() {
           const userSnap = await getDoc(doc(db, "users", user.uid));
           if (userSnap.exists()) {
             const data = userSnap.data();
-            if (data.fullName) setUserName(data.fullName.split(" ")[0]); // First name
+            if (data.fullName) setUserName(data.fullName.split(" ")[0]); 
           }
         } catch (err) {
           console.warn("Failed to load user name:", err);
         }
       } else {
-        // Try localStorage fallback
         try {
           const profile = localStorage.getItem("userProfile");
           if (profile) {
@@ -50,162 +49,139 @@ export default function HomeScreen() {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
+      transition: { staggerChildren: 0.08 }
     }
   };
 
   const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
   };
 
   return (
-    <main className="min-h-screen pb-24 md:pt-24 px-6 relative overflow-x-hidden">
+    <main className="min-h-screen bg-[var(--bg-primary)] pb-24 md:pt-24 px-6">
       <Navbar />
 
-      {/* Ambient background */}
-      <div className="fixed inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-purple-700/10 blur-[120px]" />
-        <div className="absolute top-[40%] right-[-10%] w-[400px] h-[400px] rounded-full bg-blue-700/10 blur-[100px]" />
-      </div>
-
-      <div className="max-w-4xl mx-auto pt-8">
+      <div className="max-w-2xl mx-auto pt-8 md:pt-4">
         <motion.header
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="mb-10"
         >
-          <h1 className="text-3xl font-bold mb-1">{t("home.welcome")} <span className="text-gradient">{userName}!</span></h1>
-          <p className="text-slate-400">{t("home.subtitle")}</p>
+          <h1 className="heading-xl text-[var(--text-primary)] mb-2">
+            {t("home.welcome") || "Welcome,"} <span className="text-[var(--accent-blue)]">{userName}</span>
+          </h1>
+          <p className="body-base text-[var(--text-secondary)]">
+            {t("home.subtitle") || "Ready to break communication barriers?"}
+          </p>
         </motion.header>
 
-        {/* Stats Row */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-2 gap-4 mb-8"
+          className="flex flex-col gap-6"
         >
-          {[
-            { label: t("home.streak"), value: `${stats.streak} Days`, icon: Flame, color: "text-orange-400", bg: "bg-orange-500/10" },
-            { label: t("home.conversations"), value: stats.conversationCount.toString(), icon: MessageSquare, color: "text-blue-400", bg: "bg-blue-500/10" },
-          ].map((stat, i) => (
-            <motion.div key={i} variants={itemVariants} className="glass-card p-4 flex flex-col items-center justify-center text-center">
-              <div className={`w-10 h-10 rounded-full ${stat.bg} ${stat.color} flex items-center justify-center mb-2`}>
-                <stat.icon size={20} />
+          {/* Stats Row */}
+          <motion.div variants={itemVariants} className="flex gap-4">
+            {[
+              { label: t("home.streak") || "Day Streak", value: stats.streak, icon: Flame, color: "var(--accent-red)" },
+              { label: t("home.conversations") || "Sessions", value: stats.conversationCount, icon: MessageSquare, color: "var(--accent-blue)" },
+            ].map((stat, i) => (
+              <div key={i} className="flex-1 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-2 rounded-xl bg-[var(--bg-secondary)]" style={{ color: stat.color }}>
+                    <stat.icon size={18} />
+                  </div>
+                  <span className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+                    {stat.value}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-[var(--text-secondary)]">{stat.label}</p>
               </div>
-              <h3 className="text-lg font-bold">{stat.value}</h3>
-              <p className="text-xs text-slate-400 font-medium">{stat.label}</p>
-            </motion.div>
-          ))}
-        </motion.div>
+            ))}
+          </motion.div>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid md:grid-cols-2 gap-6"
-        >
-          {/* Conversation Card */}
+          {/* Primary Action: Conversation */}
           <motion.div
             variants={itemVariants}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
             onClick={() => router.push("/conversation")}
-            className="glass-card-hover p-6 cursor-pointer relative overflow-hidden group col-span-1 md:col-span-2"
+            className="cursor-pointer bg-[var(--text-primary)] text-[var(--bg-primary)] rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-md group outline-none focus-ring"
+            role="button"
+            tabIndex={0}
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 group-hover:bg-purple-500/30 transition-colors" />
-
-            <div className="relative z-10 flex items-start justify-between">
-              <div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-primary flex items-center justify-center mb-4 shadow-[0_0_20px_rgba(124,58,237,0.4)]">
-                  <MessageSquare size={24} className="text-white" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">{t("home.start_conv")}</h2>
-                <p className="text-slate-400 max-w-sm mb-6">{t("home.start_conv_desc")}</p>
-
-                <div className="flex items-center text-sm font-bold text-purple-400">
-                  {t("home.open_camera")} <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
-                </div>
+            <div className="mb-6 sm:mb-0">
+              <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-[var(--bg-primary)] text-[var(--text-primary)] mb-4 shadow-sm">
+                <Play size={20} className="ml-1" fill="currentColor" />
               </div>
-
-              <div className="hidden sm:block opacity-50 group-hover:opacity-100 transition-opacity">
-                <div className="w-32 h-32 rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
-                  <img src="/app-logo-new.png" alt="SignVerse Logo" className="w-full h-full object-cover" />
-                </div>
-              </div>
+              <h2 className="text-2xl font-bold tracking-tight mb-2">
+                {t("home.start_conv") || "Start Conversation"}
+              </h2>
+              <p className="text-[var(--bg-secondary)] opacity-80 max-w-xs text-sm leading-relaxed">
+                {t("home.start_conv_desc") || "Open the camera to begin translating sign language in real-time."}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 font-medium bg-[var(--bg-primary)]/10 px-4 py-2.5 rounded-xl group-hover:bg-[var(--bg-primary)]/20 transition-colors">
+              <span className="text-sm">{t("home.open_camera") || "Launch"}</span>
+              <ChevronRight size={16} />
             </div>
           </motion.div>
 
-          {/* Learning Section */}
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push("/learning")}
-            className="glass-card-hover p-6 cursor-pointer group flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4">
-                <BookOpen size={20} />
+          {/* Secondary Actions List */}
+          <motion.div variants={itemVariants} className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-3xl overflow-hidden shadow-sm flex flex-col mt-2">
+            
+            <div 
+              onClick={() => router.push("/learning")}
+              className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-secondary)] transition-colors group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-[var(--bg-secondary)] text-[var(--accent-green)]">
+                  <BookOpen size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-[var(--text-primary)]">ASL Dictionary</h3>
+                  <p className="text-sm text-[var(--text-secondary)] mt-0.5">Explore alphabet and common words.</p>
+                </div>
               </div>
-              <h2 className="text-xl font-bold mb-2">ASL Dictionary</h2>
-              <p className="text-slate-400 text-sm mb-4">Explore the complete ASL alphabet, numbers, and common words.</p>
+              <ChevronRight size={20} className="text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
             </div>
 
-            <div>
-              <div className="flex items-center text-sm font-bold text-emerald-400 mt-4">
-                Open Dictionary <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+            <div 
+              onClick={() => router.push("/history")}
+              className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)] cursor-pointer hover:bg-[var(--bg-secondary)] transition-colors group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-[var(--bg-secondary)] text-[var(--accent-blue)]">
+                  <History size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-[var(--text-primary)]">Conversation History</h3>
+                  <p className="text-sm text-[var(--text-secondary)] mt-0.5">View and manage past translations.</p>
+                </div>
               </div>
+              <ChevronRight size={20} className="text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
             </div>
+
+            <div 
+              onClick={() => router.push("/settings")}
+              className="flex items-center justify-between p-5 cursor-pointer hover:bg-[var(--bg-secondary)] transition-colors group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-[var(--bg-secondary)] text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors">
+                  <Settings size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-[var(--text-primary)]">{t("home.preferences") || "Preferences"}</h3>
+                  <p className="text-sm text-[var(--text-secondary)] mt-0.5">{t("home.preferences_desc") || "Manage application settings."}</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-[var(--text-tertiary)] group-hover:text-[var(--text-primary)] transition-colors" />
+            </div>
+
           </motion.div>
-
-          {/* Settings Section */}
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push("/settings")}
-            className="glass-card-hover p-6 cursor-pointer group flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-10 h-10 rounded-xl bg-slate-700 text-slate-300 flex items-center justify-center mb-4">
-                <Settings size={20} />
-              </div>
-              <h2 className="text-xl font-bold mb-2">{t("home.preferences")}</h2>
-              <p className="text-slate-400 text-sm mb-4">{t("home.preferences_desc")}</p>
-            </div>
-
-            <div className="flex items-center text-sm font-bold text-slate-300">
-              {t("home.open_settings")} <ChevronRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Conversation History Link */}
-        <motion.div
-          variants={itemVariants}
-          initial="hidden"
-          animate="show"
-          className="mt-8"
-        >
-          <div
-            onClick={() => router.push("/history")}
-            className="glass-card-hover p-5 cursor-pointer flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                <History size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">Conversation History</h3>
-                <p className="text-sm text-slate-400">View and manage your past translation logs.</p>
-              </div>
-            </div>
-            <ChevronRight size={20} className="text-slate-500 group-hover:text-white group-hover:translate-x-1 transition-all" />
-          </div>
         </motion.div>
       </div>
     </main>
